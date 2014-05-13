@@ -20,6 +20,7 @@ class RobotinaImage:
 		middle_y=3*size_y/4
 		center_img=img[middle_x-10:middle_x+10,middle_y-10:middle_y+10]
 		center_img= center_img[~np.isnan(center_img)]
+		print 'Center image', center_img
 		max_depth=-1
 		if len(center_img)>1:
 			max_depth=max(center_img)

@@ -14,12 +14,19 @@ class Localization(object):
 			for initial_location in self.distances[observation]:
 				self.locations.add(initial_location)
 		else:
+			# Update current locations
+			new_locations = set()
+			for location in self.locations:
+				new_node = self.apply_action(action, location)
+				new_locations.add(new_node)
+			self.locations = new_locations
+
 			remove_list = []
 			for initial_location in self.locations:
-				applied_action = self.apply_action(action, initial_location)
+				#applied_action = self.apply_action(action, initial_location)
 				remove = True
 				for posible_location in self.distances[observation]:
-					if posible_location in self.graph.edges[initial_location] and posible_location == applied_action:
+					if posible_location == initial_location:# in self.graph.edges[initial_location] and posible_location == applied_action:
 						remove = False
 						break
 				if remove:
@@ -38,8 +45,10 @@ class Localization(object):
 			if node[2] == Orientation.right:
 				return (node[0],node[1]+1,node[2])
 		elif action == Action.turn_right:
+			print '>> Localization:applied_action Turning right ', node
 			return (node[0],node[1],(node[2]-1)%4)
 		elif action == Action.turn_left:
+			print '>> Localization:applied_action Turning left ', node
 			return (node[0],node[1],(node[2]+1)%4)
 
 	def estimate_distances(self,distances):
@@ -119,5 +128,15 @@ class Localization(object):
 		return graph
 
 if __name__=="__main__":
-	Loc=Localization()
-	Loc.do_localization('map2.map')
+	Loc=Localization('map2.map')
+
+	positions = [(3,1,Orientation.down), (3,1,Orientation.left), (3,1,Orientation.down)]
+	observations = [0, 0]
+	actions = [Action.turn_left, Action.turn_left]
+
+	Loc.add_observation(3)
+	print '\nInitial: ', Loc.locations
+
+	for i in range(0, len(actions)):
+		Loc.add_observation(observations[i], action=actions[i])
+		print 'Locations: ', Loc.locations

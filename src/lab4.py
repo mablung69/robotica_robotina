@@ -34,11 +34,13 @@ def do_observation_round():
 		robot.turn_angle(math.pi/2,0.2)
 	return obs
 
-def do_observation_front():
+def do_observation_front(robot):
 	while robot.current_max_depth == None:
 		robot.wait(0.5)
-	actual_depth=robot.current_max_depth;
-	obs_init=int((actual_depth-0.6)/1.2);
+	actual_depth=robot.current_max_depth
+	print 'Actual depth: ', actual_depth
+	obs_init=max(int(round((actual_depth-0.4)/0.8,0)),0)
+	print 'Observation: ', obs_init
 	return obs_init
 
 def moving_predicting_location(robot,file_name):
@@ -49,15 +51,12 @@ def moving_predicting_location(robot,file_name):
 	return start
 
 
-
 def find_space(robot,loc):
 	while robot.current_max_depth == None:
 		robot.wait(0.5)
 	found=False
 	while ~found:
-		print robot.current_max_depth
-		actual_depth=robot.current_max_depth;
-		obs_act=int((actual_depth-0.6)/1.2);
+		obs_act=do_observation_front(robot)
 		action=None
 		if obs_act==0:
 			action=Action.turn_left
@@ -65,8 +64,10 @@ def find_space(robot,loc):
 			action=Action.move
 			found=True
 		robot.apply_action(action,obs_act)
-		obs_act=int((actual_depth-0.6)/1.2);
+		obs_act = do_observation_front(robot)
 		loc.add_observation(obs_act,action=action)
+		robot.wait(1)
+		print '>> Main::find space. Locations: ', loc.locations
 	return obs	
 
 def move_robot(robot,path,walls):
@@ -88,17 +89,19 @@ def move_robot(robot,path,walls):
 
 if __name__=="__main__":
 	robot = get_robot()
-	filename = "map2.map"
+	filename = "map3.map"
 
 	loc=Localization(filename)
-	loc.add_observation(do_observation_front())
+	loc.add_observation(do_observation_front(robot))
 	
+	print '>>Main. Locations: ', loc.locations
+
 	while(len(loc.locations)!=1):
 		find_space(robot,loc)
 
 	print "LOC:", loc.locations
 
-	#moving_predicting_location(robot,filename)
+	moving_predicting_location(robot,filename)
 
 	#planifier=Planner();
 	#start=None

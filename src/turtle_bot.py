@@ -330,35 +330,45 @@ class Turtlebot(object):
             self.current_depth_msg = data
             self.current_cv_image = self.bridge.imgmsg_to_cv(data,"32FC1")
 
-            h = self.crop_h / 2 
-            w = self.crop_w / 2
-
+            h = 5
+            w = 5
             img = np.asarray(self.current_cv_image)
+            max_h, max_w = img.shape
+            img = img[max_h*1/2-h:max_h*1/2+w, max_w/2-w:max_w/2+w]
+            img= img[~np.isnan(img)]
+            if len(img)>1:
+                self.current_max_depth = max(img) / 1000
+            else:
+                self.current_max_depth = -1
+            # h = self.crop_h / 2 
+            # w = self.crop_w / 2
 
-            img = img[240 - h :240, 320 - w: 320 + w]
-            self.horrible = img
-            self.current_maze_state, self.current_maze_depth = self.image_procesor.image_analisis(img)
-            self.current_max_depth=self.image_procesor.obtain_max_depth_center(img)
-            if np.isnan(self.current_maze_depth):
-                self.current_maze_depth = 0
+            # img = np.asarray(self.current_cv_image)
 
-            #print self.current_maze_state, " ", self.current_maze_depth
-            img = img[~np.isnan(img)]
+            # img = img[240 - h :240, 320 - w: 320 + w]
+            # self.horrible = img
+            # self.current_maze_state, self.current_maze_depth = self.image_procesor.image_analisis(img)
+            # self.current_max_depth=self.image_procesor.obtain_max_depth_center(img)
+            # if np.isnan(self.current_maze_depth):
+            #     self.current_maze_depth = 0
 
-            try:
-                img = np.sort(img)
-                self.current_min_dist = img[0]
-            except:
-                pass
+            # #print self.current_maze_state, " ", self.current_maze_depth
+            # img = img[~np.isnan(img)]
 
-            if self.current_target_x != None and self.current_mask != None:
-                img = np.asarray(self.current_cv_image)
-                target_img = cv2.bitwise_and(img,img, mask = self.current_mask)
-                target_img = target_img[~np.isnan(target_img)]
-                target_img = np.sort(target_img)
-                self.current_target_depth = target_img[ len(target_img) - 1 ]
+            # try:
+            #     img = np.sort(img)
+            #     self.current_min_dist = img[0]
+            # except:
+            #     pass
+
+            # if self.current_target_x != None and self.current_mask != None:
+            #     img = np.asarray(self.current_cv_image)
+            #     target_img = cv2.bitwise_and(img,img, mask = self.current_mask)
+            #     target_img = target_img[~np.isnan(target_img)]
+            #     target_img = np.sort(target_img)
+            #     self.current_target_depth = target_img[ len(target_img) - 1 ]
                 
-            self.__check_depth()
+            #self.__check_depth()
 
         except CvBridgeError, e:
             print e
@@ -403,17 +413,17 @@ class Turtlebot(object):
         print self.current_state
 
     def __check_depth(self):
-        
+        pass
         #img = np.asarray(self.horrible)
         #img = img[np.isnan(img)]
         #nans = len(img)
 
-        if np.isnan(self.current_min_dist): 
-            self.current_substate = "turning"
-        elif self.current_min_dist < self.stop_dist:
-            self.current_substate = "turning"
-        else:
-            self.current_substate = "moving"
+        # if np.isnan(self.current_min_dist): 
+        #     self.current_substate = "turning"
+        # elif self.current_min_dist < self.stop_dist:
+        #     self.current_substate = "turning"
+        # else:
+        #     self.current_substate = "moving"
 
     def move_searh_n_destroy(self, lin_velocity, angle_velocity):
 
@@ -458,7 +468,7 @@ class Turtlebot(object):
         if self.current_maze_state != None:
             angle_velocity = angle_velocity
             _min = 0.2
-            if self.current_maze_depth < 0.5:
+            if self.current_max_depth < 0.5:
                 self.move( angular = angle_velocity * np.sign(self.current_maze_state))
             else:
                 if self.current_maze_state > threshold:
@@ -471,34 +481,54 @@ class Turtlebot(object):
                     #self.move(linear = lin_velocity*self.current_maze_depth + .1 , angular= 0)
 
     def move_maze_distance(self, distance,lin_velocity):
-        move_threshold = distance
+        print '>> Tuttlebot::Move maze distance(distance, velocity)', distance, ' , ', lin_velocity
+        
         self.__exit_if_movement_disabled()
-        # No bounds checking because we trust people. Not like William.
-        r = rospy.Rate(1)
-        while not self.__have_odom and not rospy.is_shutdown():
-            self.say("Waiting for odometry")
-            r.sleep()
+        r = rospy.Rate(100)
 
-        while self.current_maze_depth == None:
+        while self.current_max_depth == None:
             self.say("Waiting for kinect")
             r.sleep()
 
-        #msg = Twist()
-        #msg.linear.x = velocity
-        # x0 = self.__x
-        # y0 = self.__y
-        d0 = self.current_maze_depth
-        r = rospy.Rate(10)
-        while not rospy.is_shutdown():
-            delta = d0 - self.current_maze_depth
-            if delta >= move_threshold:
-                break
+        msg = Twist()
+        msg.linear.x = lin_velocity
 
-            #self.__cmd_vel_pub.publish(msg)
-            self.move_maze(lin_velocity, 0.0)
+        d0 = self.current_max_depth
+        while not rospy.is_shutdown():
+            delta = d0 - self.current_max_depth
+            
+            if delta >= distance:
+                break
+            self.__cmd_vel_pub.publish(msg)
             r.sleep()
-        #msg.linear.x = 0.0
-        self.move(0,0)      
+
+        msg.linear.x = 0.0
+        self.__cmd_vel_pub.publish(msg)    
+        self.say(0)
+
+        if current_max_depth < 0.8:
+            self.align_wall(lin_velocity)
+
+    def align_wall(lin_velocity):
+        self.__exit_if_movement_disabled()
+        r = rospy.Rate(100)
+
+        while self.current_max_depth == None:
+            self.say("Waiting for kinect")
+            r.sleep()
+
+        msg = Twist()
+        msg.linear.x = lin_velocity
+
+        while not rospy.is_shutdown():
+            if self.current_max_depth <= 0.6:
+                break
+            self.__cmd_vel_pub.publish(msg)
+            r.sleep()
+
+        msg.linear.x = 0.0
+        self.__cmd_vel_pub.publish(msg)    
+        self.say(0)
 
     def move_maze_wall(self, lin_velocity):
         move_threshold = 0.6
@@ -509,13 +539,13 @@ class Turtlebot(object):
             self.say("Waiting for odometry")
             r.sleep()
 
-        while self.current_maze_depth == None:
+        while self.current_max_depth == None:
             self.say("Waiting for kinect")
             r.sleep()
 
         r = rospy.Rate(100)
         while not rospy.is_shutdown():
-            if self.current_maze_depth <= move_threshold:
+            if self.current_max_depth <= move_threshold:
                 break
             self.move_maze(lin_velocity, 0.0)
             r.sleep()
@@ -524,7 +554,7 @@ class Turtlebot(object):
     def apply_action(self,action,observation):
         if action==Action.move:
             if observation>0:
-                self.move_maze_wall(0.3)
+                self.move_maze_distance(0.8,0.2)
                 return True
             else:
                 return False
