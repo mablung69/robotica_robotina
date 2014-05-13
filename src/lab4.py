@@ -5,7 +5,9 @@ from astar import shortest_path
 from localization import Localization
 from turtle_bot import get_robot
 from enums import Action
-
+import cv2
+import cv2.cv as cv
+import numpy as np
 
 def step(current, last, robot, has_wall, distance=1.2, angle=math.pi/2):
 	turn = current[2] - last[2]
@@ -86,6 +88,33 @@ def move_robot(robot,path,walls):
 		last_state = path[i]
 		robot.wait(0.5)
 		robot.play_sound(3)	
+
+def metal_detector(img):
+	haar_cascade = cv2.CascadeClassifier('haar/cascade.xml')
+	roi = [480/2, 640/3, 480, 640*2/3]
+	img = img[roi[0]:roi[2],roi[1]:roi[3]]
+
+	gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+	detections = haar_cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=2, 
+				minSize=(5, 5), flags = cv.CV_HAAR_SCALE_IMAGE)
+	
+	gray = np.float32(gray)
+	dst = cv2.cornerHarris(gray,2,3,0.04)
+	dst = cv2.dilate(dst,None)
+	
+	img[dst>0.05*dst.max()]=[0,0,255]
+	for (x,y,w,h) in detections:
+		cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
+
+	cv2.imshow('CROP', img)
+
+	try:
+		x_ = x + w/2
+		w_ = img.shape[1]/2
+		print x_ - w_
+		return x_ - w_
+	except Exception:
+		return None
 
 if __name__=="__main__":
 	robot = get_robot()
