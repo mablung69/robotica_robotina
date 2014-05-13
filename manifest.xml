@@ -1,0 +1,14 @@
+<package>
+  <description brief="lab_4">
+
+     lab_4
+
+  </description>
+  <author>Orlando</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/lab_4</url>
+
+</package>
+
+

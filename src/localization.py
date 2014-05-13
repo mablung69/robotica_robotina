@@ -1,0 +1,123 @@
+from enums import Orientation,Action
+from graph import UndirectedGraph
+
+class Localization(object):
+	def __init__(self,file_name):
+		self.locations = set()
+		self.graph=self.create_map(file_name)
+		self.distances = {}
+		self.estimate_distances(self.distances)
+		print self.distances
+
+	def add_observation(self, observation, action=None):
+		if len(self.locations) == 0:
+			for initial_location in self.distances[observation]:
+				self.locations.add(initial_location)
+		else:
+			remove_list = []
+			for initial_location in self.locations:
+				applied_action = self.apply_action(action, initial_location)
+				remove = True
+				for posible_location in self.distances[observation]:
+					if posible_location in self.graph.edges[initial_location] and posible_location == applied_action:
+						remove = False
+						break
+				if remove:
+					remove_list.append(initial_location)
+			for node in remove_list:
+				self.locations.remove(node)
+
+	def apply_action(self, action, node):
+		if action == Action.move:
+			if node[2] == Orientation.up:
+				return (node[0]+1,node[1],node[2])
+			if node[2] == Orientation.left:
+				return (node[0],node[1]-1,node[2])
+			if node[2] == Orientation.down:
+				return (node[0]-1,node[1],node[2])
+			if node[2] == Orientation.right:
+				return (node[0],node[1]+1,node[2])
+		elif action == Action.turn_right:
+			return (node[0],node[1],(node[2]-1)%4)
+		elif action == Action.turn_left:
+			return (node[0],node[1],(node[2]+1)%4)
+
+	def estimate_distances(self,distances):
+		print '> Exploring distances'
+		nodes = self.graph.nodes
+
+		for node in nodes:
+			print '\t>>Localization::estimate_distances Node ', node
+			distance = 0
+			orientation = node[2]
+			aux_node  = node
+			test_node = node
+
+			while True:
+				if orientation == Orientation.up:
+					test_node = (aux_node[0] + 1, aux_node[1], aux_node[2])
+				elif orientation == Orientation.left:
+					test_node = (aux_node[0], aux_node[1] - 1, aux_node[2])
+				elif orientation == Orientation.down:
+					test_node = (aux_node[0] - 1, aux_node[1], aux_node[2])
+				elif orientation == Orientation.right:
+					test_node = (aux_node[0], aux_node[1] + 1, aux_node[2])
+
+				if not test_node in self.graph.edges[aux_node]: #BUG
+					break
+				aux_node = test_node
+				distance = distance + 1
+
+			distances.setdefault(distance, [])
+			distances[distance].append(node)
+			
+
+	def create_map(self, file_name):
+		walls = {}	
+
+		print 'Reading File'
+		f = open(file_name, 'r')
+
+		# Reading walls: [row, col, up, left, down, right]
+		print '\t> Parsing walls'
+		[MAX_ROW, MAX_COL] = f.readline().split(' ')
+		MAX_ROW = int(MAX_ROW)
+		MAX_COL = int(MAX_COL)
+
+		for i in range(0, MAX_ROW*MAX_COL):     
+			data = f.readline().split(' ')
+			print 'data: ', data
+			data = map(int, data)
+			walls[(data[0],data[1])] = (data[2],data[3],data[4], data[5])
+		f.close()
+
+		# Generating graph
+		print 'Generating graph'
+		graph = UndirectedGraph()
+		for i in range(0, MAX_ROW):
+			for j in range(0, MAX_COL):
+				graph.add_node((i,j,Orientation.up))
+				graph.add_node((i,j,Orientation.left))
+				graph.add_node((i,j,Orientation.down))
+				graph.add_node((i,j,Orientation.right))
+				
+				graph.add_edge((i,j,Orientation.up), (i,j,Orientation.left))
+				graph.add_edge((i,j,Orientation.left), (i,j,Orientation.down))
+				graph.add_edge((i,j,Orientation.down), (i,j,Orientation.right))
+				graph.add_edge((i,j,Orientation.right), (i,j,Orientation.up))
+
+		for node, ws in walls.items():
+			if ws[0] == 0:
+				graph.add_edge((node[0],node[1],Orientation.up), (node[0]+1,node[1],Orientation.up))
+			if ws[1] == 0:
+				graph.add_edge((node[0],node[1],Orientation.left), (node[0],node[1]-1,Orientation.left))
+			if ws[2] == 0:
+				graph.add_edge((node[0],node[1],Orientation.down), (node[0]-1,node[1],Orientation.down))
+			if ws[3] == 0:
+				graph.add_edge((node[0],node[1],Orientation.right), (node[0],node[1]+1,Orientation.right))
+
+		return graph
+
+if __name__=="__main__":
+	Loc=Localization()
+	Loc.do_localization('map2.map')
