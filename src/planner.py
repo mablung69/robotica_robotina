@@ -51,6 +51,8 @@ class Planner(object):
 		MAX_DEPH = int(f.readline())
 		f.close()
 
+		print '> Goals: ', goals
+
 		print '> Generating graph'
 		# Generating graph
 		graph = DirectedGraph()
@@ -95,13 +97,18 @@ class Planner(object):
 	def solve(self,graph,start,goals):
 		print '==> Solving shortest path with A* Algorithm'
 
-		print '\t Start: ', start[0]
+		print '\t Start: ', start
 		print '\t Goal:  ', goals
 
 		for node, edges in graph.edges.items():
 			print node, ': ', edges
 
 		dist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
-		path = shortest_path(graph, start[0], goals[0], dist)
+		path = shortest_path(graph, start, goals[0], dist)
 
 		return path
+
+if __name__=="__main__":
+
+	plan= Planner()
+	path=plan.do_planning("map2.map",(0,1,2))

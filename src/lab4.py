@@ -137,14 +137,12 @@ if __name__=="__main__":
 	print 'Final Location: ', loc.locations
 	robot.play_sound(6)
 
-	#moving_predicting_location(robot,filename)
+	start=loc.locations.pop()
 
-	#planifier=Planner();
-	#start=None
-	#[path,walls] = planifier.do_planning(filename,start)
+	#obtaining optimal path 
+	planifier=Planner();
+	[path,walls]=plan.do_planning(filename,start)
+	
+	move_robot(robot,path,walls)
 
-	#Now we have to move the robot
-
-	#move_robot(robot,path,walls)
-
-	#robot.play_sound(5)
+	robot.play_sound(5)
