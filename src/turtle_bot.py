@@ -345,7 +345,10 @@ class Turtlebot(object):
             #    self.current_laser_depth[0] = -1
 
             # Depth 2/4
+
             img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w/2-w:max_w/2+w]
+            left_aux = img_aux[:,0]
+            right_aux = img_aux[:,2*w-1]
             img_aux = img_aux[~np.isnan(img_aux)]
             if len(img_aux)>1:
                 self.current_max_depth = max(img_aux) / 1000
@@ -355,11 +358,13 @@ class Turtlebot(object):
             #center
             self.current_laser_depth[1] = self.current_max_depth
 
+            left_aux = left_aux[~np.isnan(left_aux)]
+            right_aux = right_aux[~np.isnan(right_aux)]
             if len(img_aux)>1:
                 #Left
-                self.current_laser_depth[0] = max(img_aux[:,0]) / 1000
+                self.current_laser_depth[0] = max(left_aux) / 1000
                 #Right
-                self.current_laser_depth[2] = max(img_aux[:,w - 1]) / 1000
+                self.current_laser_depth[2] = max(right_aux) / 1000
             else:
                 self.current_laser_depth[0] = -1
                 self.current_laser_depth[2] = -1
