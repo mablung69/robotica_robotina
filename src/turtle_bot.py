@@ -337,12 +337,12 @@ class Turtlebot(object):
             max_h, max_w = img.shape
             
             # Depth 1/4 of width
-            img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w*1/4-w:max_w*1/4+w]
-            img_aux = img_aux[~np.isnan(img_aux)]
-            if len(img_aux)>1:
-                self.current_laser_depth[0] = max(img_aux) / 1000
-            else:
-                self.current_laser_depth[0] = -1
+            #img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w*1/4-w:max_w*1/4+w]
+            #img_aux = img_aux[~np.isnan(img_aux)]
+            #if len(img_aux)>1:
+            #    self.current_laser_depth[0] = max(img_aux) / 1000
+            #else:
+            #    self.current_laser_depth[0] = -1
 
             # Depth 2/4
             img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w/2-w:max_w/2+w]
@@ -351,15 +351,26 @@ class Turtlebot(object):
                 self.current_max_depth = max(img_aux) / 1000
             else:
                 self.current_max_depth = -1
+
+            #center
             self.current_laser_depth[1] = self.current_max_depth
 
-            # Depth 3/4 of width
-            img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w*3/4-w:max_w*3/4+w]
-            img_aux = img_aux[~np.isnan(img_aux)]
             if len(img_aux)>1:
-                self.current_laser_depth[2] = max(img_aux) / 1000
+                #Left
+                self.current_laser_depth[0] = max(img_aux[:,0]) / 1000
+                #Right
+                self.current_laser_depth[2] = max(img_aux[:,w - 1]) / 1000
             else:
-                self.current_laser_depth[2] = -1            
+                self.current_laser_depth[0] = -1
+                self.current_laser_depth[2] = -1
+
+            # Depth 3/4 of width
+            #img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w*3/4-w:max_w*3/4+w]
+            #img_aux = img_aux[~np.isnan(img_aux)]
+            #if len(img_aux)>1:
+            #    self.current_laser_depth[2] = max(img_aux) / 1000
+            #else:
+            #    self.current_laser_depth[2] = -1            
 
         except CvBridgeError, e:
             print e
