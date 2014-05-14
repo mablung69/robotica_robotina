@@ -514,7 +514,7 @@ class Turtlebot(object):
         d0 = self.current_max_depth
         while not rospy.is_shutdown():
             delta = d0 - self.current_max_depth
-            
+            print self.current_laser_depth
             if delta >= distance:
                 break
             self.__cmd_vel_pub.publish(msg)
