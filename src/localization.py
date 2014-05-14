@@ -160,7 +160,7 @@ if __name__=="__main__":
 	'''
 	
 	position = (3,1,3)
-	loc = Localization('map2.map')
+	loc = Localization('map3.map')
 	loc.add_observation(0)
 	print loc.locations
 

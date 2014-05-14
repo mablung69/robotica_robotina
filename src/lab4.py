@@ -130,7 +130,8 @@ if __name__=="__main__":
 
 	while len(loc.locations) != 1:
 		action,_ = loc.plan_action()
-		robot.apply_action(action, observation)
+		if not robot.apply_action(action, observation):
+			robot.apply_action(action+1, observation)
 		observation = do_observation_front(robot)
 		loc.add_observation(observation, action=action)
 		print 'ACTION: ', action
