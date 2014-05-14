@@ -333,6 +333,10 @@ class Turtlebot(object):
 
             h = 5
             w = 5
+
+            h2 = 5
+            w2 = 50
+
             img = np.asarray(self.current_cv_image)
             max_h, max_w = img.shape
             
@@ -347,8 +351,6 @@ class Turtlebot(object):
             # Depth 2/4
 
             img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w/2-w:max_w/2+w]
-            left_aux = img_aux[:,0]
-            right_aux = img_aux[:,2*w-1]
             img_aux = img_aux[~np.isnan(img_aux)]
             if len(img_aux)>1:
                 self.current_max_depth = max(img_aux) / 1000
@@ -358,8 +360,12 @@ class Turtlebot(object):
             #center
             self.current_laser_depth[1] = self.current_max_depth
 
+            img_aux = img[max_h*1/2-h2:max_h*1/2+h2, max_w/2-w2:max_w/2+w2]
+            left_aux = img_aux[:,0]
+            right_aux = img_aux[:,2*w2-1]
             left_aux = left_aux[~np.isnan(left_aux)]
             right_aux = right_aux[~np.isnan(right_aux)]
+
             if len(img_aux)>1:
                 #Left
                 self.current_laser_depth[0] = max(left_aux) / 1000
@@ -501,7 +507,7 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)
 
         #if self.current_max_depth < 0.8:
-        #    self.correct_short_angle(velocity)
+        self.correct_short_angle(velocity)
 
     def move_maze_distance(self, distance,lin_velocity):
         print '>> Tuttlebot::Move maze distance(distance, velocity)', distance, ' , ', lin_velocity
@@ -515,11 +521,13 @@ class Turtlebot(object):
 
         msg = Twist()
         msg.linear.x = lin_velocity
+        msg.angular.z = 0
 
         d0 = self.current_max_depth
         while not rospy.is_shutdown():
             delta = d0 - self.current_max_depth
-            print self.current_laser_depth
+            #
+            #print msg.angular.z
             if delta >= distance:
                 break
             self.__cmd_vel_pub.publish(msg)
@@ -554,7 +562,6 @@ class Turtlebot(object):
         self.say(0)
 
     def correct_short_angle(self, velocity=1):
-        print self.current_laser_depth
         for i in xrange(0,3):
             if self.current_laser_depth[i] == -1:
                 return 0
@@ -568,13 +575,13 @@ class Turtlebot(object):
         angle0 = self.__cumulative_angle
         r = rospy.Rate(100)
         while not rospy.is_shutdown():
-
+            print self.current_laser_depth[0] - self.current_laser_depth[2]
             if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
                 msg.angular.z = np.abs(-velocity)
             else: # Turn left
                 msg.angular.z = np.abs(velocity)
 
-            if self.current_laser_depth[1] < self.current_laser_depth[0] and self.current_laser_depth[1] < self.current_laser_depth[2]:
+            if abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 :
                 break  
 
             self.__cmd_vel_pub.publish(msg)
@@ -617,10 +624,10 @@ class Turtlebot(object):
             else:
                 return False
         elif action==Action.turn_left:
-            self.turn_maze_angle(math.pi/2,0.3)
+            self.turn_maze_angle(math.pi/2,0.5)
             return True
         elif action==Action.turn_right:
-            self.turn_maze_angle(-math.pi/2,0.3)
+            self.turn_maze_angle(-math.pi/2,0.5)
             return True
         else:
             raise Exception("acton invalid")
