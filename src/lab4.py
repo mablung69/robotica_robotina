@@ -9,20 +9,20 @@ import cv2
 import cv2.cv as cv
 import numpy as np
 
-def step(current, last, robot, has_wall, distance=1.2, angle=math.pi/2):
+def get_action(current, last):
 	turn = current[2] - last[2]
 	print 'Turn: ', turn
+	action=None
 	if turn == 0:
-		if has_wall:
-			robot.move_maze_wall(0.3)
-		else:
-			robot.move_maze_distance(1.2,0.3)
-	elif turn >-3 and turn < 3:
-		robot.turn_angle(turn*angle,0.2)
+		return Action.move_robot
+	elif turn==-1:  
+		return Action.turn_right
+	elif turn==1:
+		return Action.turn_left
 	elif turn == 3:
-		robot.turn_angle(-angle,0.2)
+		return Action.turn_right
 	elif turn == -3:
-		robot.turn_angle(angle,0.2)
+		return Action.turn_left
 
 #def step_predicting_location(robot):
 
@@ -145,7 +145,15 @@ if __name__=="__main__":
 	#obtaining optimal path 
 	planifier=Planner();
 	[path,walls]=planifier.do_planning(filename,start)
-	
-	move_robot(robot,path,walls)
+
+	last_state = path[0]
+	for i in range(1,len(path)):
+		print '\n Last state: ', last_state
+		print ' Current state: ', path[i]
+		action=get_action(path[i],last_state)
+		robot.apply_action(action, observation)
+		observation = do_observation_front(robot)
+		last_state = path[i]
+		robot.play_sound(3)	
 
 	robot.play_sound(6)
