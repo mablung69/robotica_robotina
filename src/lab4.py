@@ -120,7 +120,7 @@ def metal_detector(img):
 
 if __name__=="__main__":
 	robot = get_robot()
-	filename = "map3.map"
+	filename = "lab4.map"
 
 	loc=Localization(filename)
 	observation = do_observation_front(robot)

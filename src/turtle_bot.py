@@ -507,7 +507,7 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-        if obs_init < 1:
+        if obs_init <= 1:
             self.correct_short_angle(velocity)
 
     def move_maze_distance(self, distance,lin_velocity):
@@ -542,7 +542,7 @@ class Turtlebot(object):
             self.align_wall(lin_velocity)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-        if obs_init < 1:
+        if obs_init <= 1:
             self.correct_short_angle(0.7)
 
     def align_wall(self, lin_velocity):
@@ -582,9 +582,9 @@ class Turtlebot(object):
         while not rospy.is_shutdown():
             print self.current_laser_depth[0] - self.current_laser_depth[2]
             if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
-                msg.angular.z = np.abs(velocity)
+                msg.angular.z = -np.abs(velocity)
             else: # Turn left
-                msg.angular.z = np.abs(-velocity)
+                msg.angular.z = np.abs(velocity)
 
             if abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 :
                 break  

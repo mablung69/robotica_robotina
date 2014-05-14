@@ -48,7 +48,7 @@ class Planner(object):
 			
 			goals.append((row,col,orientation))
 
-		MAX_DEPH = int(f.readline())
+		#MAX_DEPH = int(f.readline())
 		f.close()
 
 		print '> Goals: ', goals

@@ -159,8 +159,8 @@ if __name__=="__main__":
 		Supuestos de test: mapa en forma de T y comienza en (3,1,3)
 	'''
 	
-	position = (1,0,1)
-	loc = Localization('map3.map')
+	position = (2,0,1)
+	loc = Localization('lab4.map')
 	loc.add_observation(0)
 	path = [position]
 	print loc.locations
