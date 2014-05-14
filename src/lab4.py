@@ -43,7 +43,7 @@ def do_observation_front(robot):
 		print '>> Main::do observation front: Waiting for kinect'
 	actual_depth=robot.current_max_depth
 	print 'Actual depth: ', actual_depth
-	obs_init=max(int(round((actual_depth-0.4)/0.8,0)),0)
+	obs_init=max(int(round((actual_depth-0.5)/0.8,0)),0)
 	print 'Observation: ', obs_init
 	return obs_init
 
@@ -133,6 +133,7 @@ if __name__=="__main__":
 		robot.apply_action(action, observation)
 		observation = do_observation_front(robot)
 		loc.add_observation(observation, action=action)
+		print 'ACTION: ', action
 
 	print 'Final Location: ', loc.locations
 	robot.play_sound(6)

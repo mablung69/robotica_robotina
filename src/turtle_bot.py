@@ -81,7 +81,7 @@ class Turtlebot(object):
         self.current_target_x = None
         self.current_target_y = None
         self.current_target_depth = None
-        self.current_laser_depth = None
+        self.current_laser_depth = [-1, -1, -1]
 
         self.current_maze_depth = None
 
@@ -329,8 +329,7 @@ class Turtlebot(object):
     def __depth_handler(self, data):
         try:
             self.current_depth_msg = data
-            self.current_cv_image = self.bridge.imgmsg_to_cv(data,"32FC1")
-             self.current_laser_depth = []
+            self.current_cv_image = self.bridge.imgmsg_to_cv(data,"32FC1")            
 
             h = 5
             w = 5
@@ -338,29 +337,29 @@ class Turtlebot(object):
             max_h, max_w = img.shape
             
             # Depth 1/4 of width
-            img_aux = img[max_h*1/2-h:max_h*1/2+w, max_w*1/4-w:max_w*1/4+w]
+            img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w*1/4-w:max_w*1/4+w]
             img_aux = img_aux[~np.isnan(img_aux)]
             if len(img_aux)>1:
-                self.current_laser_depth.append(max(img_aux) / 1000)
+                self.current_laser_depth[0] = max(img_aux) / 1000
             else:
-                self.current_laser_depth.append(-1)
+                self.current_laser_depth[0] = -1
 
             # Depth 2/4
-            img_aux = img[max_h*1/2-h:max_h*1/2+w, max_w/2-w:max_w/2+w]
-            img_aux = img[~np.isnan(img)]
+            img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w/2-w:max_w/2+w]
+            img_aux = img_aux[~np.isnan(img_aux)]
             if len(img_aux)>1:
                 self.current_max_depth = max(img_aux) / 1000
             else:
                 self.current_max_depth = -1
-            self.current_laser_depth.append(self.current_max_depth)
+            self.current_laser_depth[1] = self.current_max_depth
 
             # Depth 3/4 of width
-            img_aux = img[max_h*1/2-h:max_h*1/2+w, max_w*3/4-w:max_w*3/4+w]
+            img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w*3/4-w:max_w*3/4+w]
             img_aux = img_aux[~np.isnan(img_aux)]
             if len(img_aux)>1:
-                self.current_laser_depth.append(max(img_aux) / 1000)
+                self.current_laser_depth[2] = max(img_aux) / 1000
             else:
-                self.current_laser_depth.append(-1)            
+                self.current_laser_depth[2] = -1            
 
         except CvBridgeError, e:
             print e
@@ -485,8 +484,8 @@ class Turtlebot(object):
         msg.angular.z = 0.0
         self.__cmd_vel_pub.publish(msg)
 
-        if self.current_max_depth < 0.8:
-            self.correct_short_angle()
+        #if self.current_max_depth < 0.8:
+        #    self.correct_short_angle(velocity)
 
     def move_maze_distance(self, distance,lin_velocity):
         print '>> Tuttlebot::Move maze distance(distance, velocity)', distance, ' , ', lin_velocity
@@ -538,7 +537,8 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)    
         self.say(0)
 
-    def correct_short_angle(self):
+    def correct_short_angle(self, velocity=1):
+        print self.current_laser_depth
         for i in xrange(0,3):
             if self.current_laser_depth[i] == -1:
                 return 0
@@ -548,15 +548,15 @@ class Turtlebot(object):
         r = rospy.Rate(1)
 
         msg = Twist()
-
-        if self.current_laser_depth[0] - self.current_laser_depth[2] > 0:
-            msg.angular.z = np.abs(-velocity)
-        else:
-            msg.angular.z = np.abs(velocity)
         
         angle0 = self.__cumulative_angle
         r = rospy.Rate(100)
         while not rospy.is_shutdown():
+
+            if self.current_laser_depth[0] - self.current_laser_depth[2] > 0:
+                msg.angular.z = np.abs(-velocity)
+            else:
+                msg.angular.z = np.abs(velocity)
 
             if self.current_laser_depth[1] < self.current_laser_depth[0] and self.current_laser_depth[1] < self.current_laser_depth[2]:
                 break  
@@ -566,10 +566,7 @@ class Turtlebot(object):
 
         msg.angular.z = 0.0
         self.__cmd_vel_pub.publish(msg)
-
-        if self.current_max_depth < 0.8:
-            self.correct_short_angle
-
+        self.wait(1)
 
  
     def correct_long_angle(self):
@@ -604,10 +601,10 @@ class Turtlebot(object):
             else:
                 return False
         elif action==Action.turn_left:
-            self.turn_maze_angle(math.pi/2,0.2)
+            self.turn_maze_angle(math.pi/2,0.3)
             return True
         elif action==Action.turn_right:
-            self.turn_maze_angle(-math.pi/2,0.2)
+            self.turn_maze_angle(-math.pi/2,0.3)
             return True
         else:
             raise Exception("acton invalid")
