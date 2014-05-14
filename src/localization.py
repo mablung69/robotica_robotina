@@ -6,8 +6,10 @@ class Localization(object):
 		self.locations = set()
 		self.graph=self.create_map(file_name)
 		self.distances = {}
-		self.estimate_distances(self.distances)
-		print self.distances
+		self.node_distance = {}
+		
+		self.estimate_distances()
+		
 
 	def add_observation(self, observation, action=None):
 		if len(self.locations) == 0:
@@ -51,7 +53,31 @@ class Localization(object):
 			print '>> Localization:applied_action Turning left ', node
 			return (node[0],node[1],(node[2]+1)%4)
 
-	def estimate_distances(self,distances):
+	def plan_action(self):
+		min_length  = -1
+		best_action = None
+		actions = [Action.move, Action.turn_left, Action.turn_right]
+
+		for action in actions:
+			new_observations = {}
+			for location in self.locations:
+				new_location = self.apply_action(action, location)
+				try:
+					observation = self.node_distance[new_location]
+					new_observations.setdefault(observation, [])
+					new_observations[observation].append[location]
+				except Exception:
+					pass
+
+			posible_observations = len(new_observations.keys())
+			if (posible_observations > min_length) or (posible_observations == min_length and action == Action.move):
+				best_action = action
+				min_length = posible_observations
+
+		return best_action, min_length
+
+
+	def estimate_distances(self):
 		print '> Exploring distances'
 		nodes = self.graph.nodes
 
@@ -77,8 +103,9 @@ class Localization(object):
 				aux_node = test_node
 				distance = distance + 1
 
-			distances.setdefault(distance, [])
-			distances[distance].append(node)
+			self.distances.setdefault(distance, [])
+			self.distances[distance].append(node)
+			self.node_distance[node] = distance
 			
 
 	def create_map(self, file_name):
@@ -128,15 +155,24 @@ class Localization(object):
 		return graph
 
 if __name__=="__main__":
-	Loc=Localization('map2.map')
+	loc = Localization('map2.map')
+	loc.add_observation(0)
+	loc.add_observation(0, Action.turn_left)
+	loc.add_observation(0, Action.turn_left)
+	loc.add_observation(3, Action.turn_left)
+	loc.add_observation(2, Action.move)
+	loc.add_observation(1, Action.turn_right)
+	print 'Action: ', loc.plan_action()
+	print 'Locations: ', loc.locations
 
-	positions = [(3,1,Orientation.down), (3,1,Orientation.left), (3,1,Orientation.down)]
-	observations = [0, 0]
-	actions = [Action.turn_left, Action.turn_left]
 
-	Loc.add_observation(3)
-	print '\nInitial: ', Loc.locations
+	# positions = [(3,1,Orientation.down), (3,1,Orientation.left), (3,1,Orientation.down)]
+	# observations = [0, 0]
+	# actions = [Action.turn_left, Action.turn_left]
 
-	for i in range(0, len(actions)):
-		Loc.add_observation(observations[i], action=actions[i])
-		print 'Locations: ', Loc.locations
+	# Loc.add_observation(3)
+	# print '\nInitial: ', Loc.locations
+
+	# for i in range(0, len(actions)):
+	# 	Loc.add_observation(observations[i], action=actions[i])
+	# 	print 'Locations: ', Loc.locations
