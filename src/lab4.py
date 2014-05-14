@@ -14,7 +14,7 @@ def get_action(current, last):
 	print 'Turn: ', turn
 	action=None
 	if turn == 0:
-		return Action.move_robot
+		return Action.move
 	elif turn==-1:  
 		return Action.turn_right
 	elif turn==1:
@@ -135,9 +135,12 @@ if __name__=="__main__":
 			robot.apply_action(action, observation)
 		observation = do_observation_front(robot)
 		loc.add_observation(observation, action=action)
+		robot.play_sound(2)
 		print 'ACTION: ', action
+		print 'PARTIAL LOCATIONS: ', loc.locations
 
 	print 'Final Location: ', loc.locations
+	robot.wait(5)
 	robot.play_sound(6)
 
 	start=loc.locations.pop()
@@ -154,6 +157,6 @@ if __name__=="__main__":
 		robot.apply_action(action, observation)
 		observation = do_observation_front(robot)
 		last_state = path[i]
-		robot.play_sound(3)	
+		robot.play_sound(5)	
 
 	robot.play_sound(6)

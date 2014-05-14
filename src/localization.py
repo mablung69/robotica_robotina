@@ -47,10 +47,10 @@ class Localization(object):
 			if node[2] == Orientation.right:
 				return (node[0],node[1]+1,node[2])
 		elif action == Action.turn_right:
-			print '>> Localization:applied_action Turning right ', node
+			#print '>> Localization:applied_action Turning right ', node
 			return (node[0],node[1],(node[2]-1)%4)
 		elif action == Action.turn_left:
-			print '>> Localization:applied_action Turning left ', node
+			#print '>> Localization:applied_action Turning left ', node
 			return (node[0],node[1],(node[2]+1)%4)
 
 	def plan_action(self):
@@ -78,11 +78,11 @@ class Localization(object):
 
 
 	def estimate_distances(self):
-		print '> Exploring distances'
+		#print '> Exploring distances'
 		nodes = self.graph.nodes
 
 		for node in nodes:
-			print '\t>>Localization::estimate_distances Node ', node
+			#print '\t>>Localization::estimate_distances Node ', node
 			distance = 0
 			orientation = node[2]
 			aux_node  = node

@@ -335,7 +335,7 @@ class Turtlebot(object):
             w = 5
 
             h2 = 5
-            w2 = 50
+            w2 = 30
 
             img = np.asarray(self.current_cv_image)
             max_h, max_w = img.shape
@@ -368,9 +368,9 @@ class Turtlebot(object):
 
             if len(img_aux)>1:
                 #Left
-                self.current_laser_depth[0] = max(left_aux) / 1000
+                self.current_laser_depth[0] = np.average(left_aux) / 1000
                 #Right
-                self.current_laser_depth[2] = max(right_aux) / 1000
+                self.current_laser_depth[2] = np.average(right_aux) / 1000
             else:
                 self.current_laser_depth[0] = -1
                 self.current_laser_depth[2] = -1
@@ -506,8 +506,9 @@ class Turtlebot(object):
         msg.angular.z = 0.0
         self.__cmd_vel_pub.publish(msg)
 
-        #if self.current_max_depth < 0.8:
-        self.correct_short_angle(velocity)
+        obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
+        if obs_init < 1:
+            self.correct_short_angle(velocity)
 
     def move_maze_distance(self, distance,lin_velocity):
         print '>> Tuttlebot::Move maze distance(distance, velocity)', distance, ' , ', lin_velocity
@@ -539,6 +540,10 @@ class Turtlebot(object):
 
         if self.current_max_depth < 0.8:
             self.align_wall(lin_velocity)
+
+        obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
+        if obs_init < 1:
+            self.correct_short_angle(0.7)
 
     def align_wall(self, lin_velocity):
         self.__exit_if_movement_disabled()
@@ -577,9 +582,9 @@ class Turtlebot(object):
         while not rospy.is_shutdown():
             print self.current_laser_depth[0] - self.current_laser_depth[2]
             if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
-                msg.angular.z = np.abs(-velocity)
-            else: # Turn left
                 msg.angular.z = np.abs(velocity)
+            else: # Turn left
+                msg.angular.z = np.abs(-velocity)
 
             if abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 :
                 break  
@@ -624,10 +629,10 @@ class Turtlebot(object):
             else:
                 return False
         elif action==Action.turn_left:
-            self.turn_maze_angle(math.pi/2,0.5)
+            self.turn_maze_angle(math.pi/2,0.7)
             return True
         elif action==Action.turn_right:
-            self.turn_maze_angle(-math.pi/2,0.5)
+            self.turn_maze_angle(-math.pi/2,0.7)
             return True
         else:
             raise Exception("acton invalid")
