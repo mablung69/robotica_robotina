@@ -159,15 +159,25 @@ if __name__=="__main__":
 		Supuestos de test: mapa en forma de T y comienza en (3,1,3)
 	'''
 	
-	position = (3,1,3)
+	position = (1,0,1)
 	loc = Localization('map3.map')
 	loc.add_observation(0)
+	path = [position]
 	print loc.locations
 
 	while len(loc.locations) != 1:
 		action,_ = loc.plan_action()
-		position = loc.apply_action(action, position)
+		if loc.apply_action(action, position) in loc.graph.edges[position]:
+			position = loc.apply_action(action, position)
+		else:
+			action = action+1
+			if not loc.apply_action(action, position) in loc.graph.edges[position]:
+				raise Exception('Error')
+			position = loc.apply_action(action, position)
+
 		observation = loc.node_distance[position]
 		loc.add_observation(observation, action=action)
+		path.append(position)
 
+	print 'Path: ', path
 	print 'Final Location: ', loc.locations
