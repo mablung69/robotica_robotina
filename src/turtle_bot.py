@@ -569,9 +569,9 @@ class Turtlebot(object):
         r = rospy.Rate(100)
         while not rospy.is_shutdown():
 
-            if self.current_laser_depth[0] - self.current_laser_depth[2] > 0:
+            if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
                 msg.angular.z = np.abs(-velocity)
-            else:
+            else: # Turn left
                 msg.angular.z = np.abs(velocity)
 
             if self.current_laser_depth[1] < self.current_laser_depth[0] and self.current_laser_depth[1] < self.current_laser_depth[2]:

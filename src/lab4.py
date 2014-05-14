@@ -131,7 +131,8 @@ if __name__=="__main__":
 	while len(loc.locations) != 1:
 		action,_ = loc.plan_action()
 		if not robot.apply_action(action, observation):
-			robot.apply_action(action+1, observation)
+			action = action + 1
+			robot.apply_action(action, observation)
 		observation = do_observation_front(robot)
 		loc.add_observation(observation, action=action)
 		print 'ACTION: ', action
@@ -143,8 +144,8 @@ if __name__=="__main__":
 
 	#obtaining optimal path 
 	planifier=Planner();
-	[path,walls]=plan.do_planning(filename,start)
+	[path,walls]=planifier.do_planning(filename,start)
 	
 	move_robot(robot,path,walls)
 
-	robot.play_sound(5)
+	robot.play_sound(6)
