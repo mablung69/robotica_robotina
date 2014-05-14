@@ -30,6 +30,7 @@ def do_observation_round():
 	obs=[0,0,0,0]
 	while robot.current_max_depth == None:
 		robot.wait(0.5)
+
 	for i in xrange(0,4):
 		actual_depth=robot.current_max_depth;
 		obs_init[i]=int((actual_depth-0.6)/1.2);
@@ -39,6 +40,7 @@ def do_observation_round():
 def do_observation_front(robot):
 	while robot.current_max_depth == None:
 		robot.wait(0.5)
+		print '>> Main::do observation front: Waiting for kinect'
 	actual_depth=robot.current_max_depth
 	print 'Actual depth: ', actual_depth
 	obs_init=max(int(round((actual_depth-0.4)/0.8,0)),0)
@@ -121,16 +123,21 @@ if __name__=="__main__":
 	filename = "map3.map"
 
 	loc=Localization(filename)
-	loc.add_observation(do_observation_front(robot))
+	observation = do_observation_front(robot)
+	loc.add_observation(observation)
 	
 	print '>>Main. Locations: ', loc.locations
 
-	while(len(loc.locations)!=1):
-		find_space(robot,loc)
+	while len(loc.locations) != 1:
+		action,_ = loc.plan_action()
+		robot.apply_action(action, observation)
+		observation = do_observation_front(robot)
+		loc.add_observation(observation, action=action)
 
-	print "LOC:", loc.locations
+	print 'Final Location: ', loc.locations
+	robot.play_sound(6)
 
-	moving_predicting_location(robot,filename)
+	#moving_predicting_location(robot,filename)
 
 	#planifier=Planner();
 	#start=None

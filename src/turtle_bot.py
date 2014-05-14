@@ -506,10 +506,10 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)    
         self.say(0)
 
-        if current_max_depth < 0.8:
+        if self.current_max_depth < 0.8:
             self.align_wall(lin_velocity)
 
-    def align_wall(lin_velocity):
+    def align_wall(self, lin_velocity):
         self.__exit_if_movement_disabled()
         r = rospy.Rate(100)
 
@@ -561,7 +561,7 @@ class Turtlebot(object):
         elif action==Action.turn_left:
             self.turn_angle(math.pi/2,0.2)
             return True
-        elif action==Action.turn_rigth:
+        elif action==Action.turn_right:
             self.turn_angle(-math.pi/2,0.2)
             return True
         else:
