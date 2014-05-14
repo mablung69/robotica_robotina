@@ -155,24 +155,19 @@ class Localization(object):
 		return graph
 
 if __name__=="__main__":
+	'''
+		Supuestos de test: mapa en forma de T y comienza en (3,1,3)
+	'''
+	
+	position = (3,1,3)
 	loc = Localization('map2.map')
 	loc.add_observation(0)
-	loc.add_observation(0, Action.turn_left)
-	loc.add_observation(0, Action.turn_left)
-	loc.add_observation(3, Action.turn_left)
-	loc.add_observation(2, Action.move)
-	loc.add_observation(1, Action.turn_right)
-	print 'Action: ', loc.plan_action()
-	print 'Locations: ', loc.locations
+	print loc.locations
 
+	while len(loc.locations) != 1:
+		action,_ = loc.plan_action()
+		position = loc.apply_action(action, position)
+		observation = loc.node_distance[position]
+		loc.add_observation(observation, action=action)
 
-	# positions = [(3,1,Orientation.down), (3,1,Orientation.left), (3,1,Orientation.down)]
-	# observations = [0, 0]
-	# actions = [Action.turn_left, Action.turn_left]
-
-	# Loc.add_observation(3)
-	# print '\nInitial: ', Loc.locations
-
-	# for i in range(0, len(actions)):
-	# 	Loc.add_observation(observations[i], action=actions[i])
-	# 	print 'Locations: ', Loc.locations
+	print 'Final Location: ', loc.locations
