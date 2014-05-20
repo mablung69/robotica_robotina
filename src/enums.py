@@ -10,5 +10,5 @@ class Action(object):
 	turn_right = 2
 
 class Excecute_Params(object):
-	MAP_PATH="Mapas/Without_Start/"
+	MAP_PATH="Mapas/With_Start/"
 	file_name = MAP_PATH+"map3.map"

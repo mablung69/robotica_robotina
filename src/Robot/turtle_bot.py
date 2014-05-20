@@ -88,6 +88,14 @@ class Turtlebot(object):
         self.crop_h = 480
         self.crop_w = 480
 
+        self.h_depth_win = 5
+        self.w_depth_win = 5
+
+        self.h_corr_win = 5
+        self.w_corr_win = 30
+
+        self.current_w_corr_win = self.w_corr_win
+
         self.__cmd_vel_pub = rospy.Publisher('/mobile_base/commands/velocity', Twist)
         self.__bumper_sub = rospy.Subscriber('/mobile_base/events/bumper', BumperEvent, self.__bumper_handler)
         self.__odom_sub = rospy.Subscriber('/odom', Odometry, self.__odom_handler)
@@ -331,25 +339,25 @@ class Turtlebot(object):
             self.current_depth_msg = data
             self.current_cv_image = self.bridge.imgmsg_to_cv(data,"32FC1")            
 
-            h = 5
-            w = 5
+            obs_init= 0
+            if self.current_max_depth != None:
+                obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
 
-            h2 = 5
-            w2 = 30
+            h = self.h_depth_win
+            w = self.w_corr_win
+
+            h2 = self.h_corr_win
+            
+            if obs_init > 1:
+                w2 = 3 * self.w_corr_win 
+            else: 
+                w2 = self.w_corr_win
+
+            self.current_w_corr_win = w2
 
             img = np.asarray(self.current_cv_image)
             max_h, max_w = img.shape
             
-            # Depth 1/4 of width
-            #img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w*1/4-w:max_w*1/4+w]
-            #img_aux = img_aux[~np.isnan(img_aux)]
-            #if len(img_aux)>1:
-            #    self.current_laser_depth[0] = max(img_aux) / 1000
-            #else:
-            #    self.current_laser_depth[0] = -1
-
-            # Depth 2/4
-
             img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w/2-w:max_w/2+w]
             img_aux = img_aux[~np.isnan(img_aux)]
             if len(img_aux)>1:
@@ -374,14 +382,6 @@ class Turtlebot(object):
             else:
                 self.current_laser_depth[0] = -1
                 self.current_laser_depth[2] = -1
-
-            # Depth 3/4 of width
-            #img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w*3/4-w:max_w*3/4+w]
-            #img_aux = img_aux[~np.isnan(img_aux)]
-            #if len(img_aux)>1:
-            #    self.current_laser_depth[2] = max(img_aux) / 1000
-            #else:
-            #    self.current_laser_depth[2] = -1            
 
         except CvBridgeError, e:
             print e
@@ -507,8 +507,8 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-        if obs_init <= 1:
-            self.correct_short_angle(velocity)
+        if obs_init <= 4:
+            self.correct_short_angle()
 
     def move_maze_distance(self, distance,lin_velocity):
         print '>> Tuttlebot::Move maze distance(distance, velocity)', distance, ' , ', lin_velocity
@@ -542,8 +542,8 @@ class Turtlebot(object):
             self.align_wall(lin_velocity)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-        if obs_init <= 1:
-            self.correct_short_angle(0.7)
+        if obs_init <= 4:
+            self.correct_short_angle()
 
     def align_wall(self, lin_velocity):
         self.__exit_if_movement_disabled()
@@ -566,7 +566,8 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)    
         self.say(0)
 
-    def correct_short_angle(self, velocity=1):
+    def correct_short_angle(self):
+
         for i in xrange(0,3):
             if self.current_laser_depth[i] == -1:
                 return 0
@@ -582,11 +583,14 @@ class Turtlebot(object):
         while not rospy.is_shutdown():
             print self.current_laser_depth[0] - self.current_laser_depth[2]
             if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
-                msg.angular.z = -np.abs(velocity)
+                msg.angular.z = -np.abs(0.5)
             else: # Turn left
-                msg.angular.z = np.abs(velocity)
+                msg.angular.z = np.abs(0.5)
 
-            if abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 :
+            obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
+            if obs_init > 1:
+                msg.angular.z = - msg.angular.z
+            if abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init+1) :
                 break  
 
             self.__cmd_vel_pub.publish(msg)
@@ -629,10 +633,10 @@ class Turtlebot(object):
             else:
                 return False
         elif action==Action.turn_left:
-            self.turn_maze_angle(math.pi/2,0.7)
+            self.turn_maze_angle(math.pi/2,0.8)
             return True
         elif action==Action.turn_right:
-            self.turn_maze_angle(-math.pi/2,0.7)
+            self.turn_maze_angle(-math.pi/2,0.8)
             return True
         else:
             raise Exception("acton invalid")

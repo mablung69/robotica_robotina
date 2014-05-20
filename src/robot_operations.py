@@ -1,3 +1,5 @@
+from enums import Action
+
 def do_observation_front(robot):
 	while robot.current_max_depth == None:
 		robot.wait(0.5)

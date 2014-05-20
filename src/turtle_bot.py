@@ -589,8 +589,9 @@ class Turtlebot(object):
 
             obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
             if obs_init > 1:
+                obs_init = min(1,obs_init)
                 msg.angular.z = - msg.angular.z
-            if abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init+1) :
+            if abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init)*(obs_init)*(obs_init) :
                 break  
 
             self.__cmd_vel_pub.publish(msg)
