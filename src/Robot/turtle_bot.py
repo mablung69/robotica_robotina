@@ -94,6 +94,9 @@ class Turtlebot(object):
         self.h_corr_win = 5
         self.w_corr_win = 30
 
+        self.left_column = None
+        self.right_column = None
+
         self.current_w_corr_win = self.w_corr_win
 
         self.__cmd_vel_pub = rospy.Publisher('/mobile_base/commands/velocity', Twist)
@@ -162,6 +165,7 @@ class Turtlebot(object):
         y0 = self.__y
         r = rospy.Rate(100)
         while not rospy.is_shutdown():
+            
             d = ((self.__x - x0)**2 + (self.__y - y0)**2)**0.5
             if d >= distance:
                 break
@@ -383,6 +387,20 @@ class Turtlebot(object):
                 self.current_laser_depth[0] = -1
                 self.current_laser_depth[2] = -1
 
+            img_aux = img
+            left_aux = img_aux[:,0]
+            right_aux = img_aux[:,639]
+            left_aux = left_aux[~np.isnan(left_aux)]
+            right_aux = right_aux[~np.isnan(right_aux)]
+            if len(img_aux)>1:
+                #Left extreme
+                self.left_column = np.average(left_aux) / 1000
+                #Right extreme
+                self.right_column = np.average(right_aux) / 1000
+            else:
+                self.left_column = -1
+                self.right_column = -1
+
         except CvBridgeError, e:
             print e
 
@@ -526,6 +544,7 @@ class Turtlebot(object):
 
         d0 = self.current_max_depth
         while not rospy.is_shutdown():
+            print(self.left_column,"   ",self.right_column)
             delta = d0 - self.current_max_depth
             #
             #print msg.angular.z
@@ -580,8 +599,10 @@ class Turtlebot(object):
         
         angle0 = self.__cumulative_angle
         r = rospy.Rate(100)
+        max_iter = 50
+        i = 0
         while not rospy.is_shutdown():
-            print self.current_laser_depth[0] - self.current_laser_depth[2]
+            print(i," : ",self.current_laser_depth[0] - self.current_laser_depth[2])
             if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
                 msg.angular.z = -np.abs(0.5)
             else: # Turn left
@@ -589,11 +610,14 @@ class Turtlebot(object):
 
             obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
             if obs_init > 1:
+                obs_init = min(1,obs_init)
                 msg.angular.z = - msg.angular.z
-            if abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init+1) :
+            if (abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init)**2) or (i > max_iter):
                 break  
 
             self.__cmd_vel_pub.publish(msg)
+            i+=1
+
             r.sleep()
 
         msg.angular.z = 0.0
