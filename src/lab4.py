@@ -8,6 +8,8 @@ from enums import Action
 import cv2
 import cv2.cv as cv
 import numpy as np
+import thread
+import time
 
 def get_action(current, last):
 	turn = current[2] - last[2]
@@ -118,9 +120,30 @@ def metal_detector(img):
 	except Exception:
 		return None
 
+def show_image(threadName,robot, delay = 0):
+
+	while True:
+		k = cv2.waitKey(1)
+
+		if robot.current_cv_rgb_image != None:
+			img = np.asarray(robot.current_cv_rgb_image)
+			height, width, depth = img.shape
+			p1 = ( width / 2 - robot.current_w_corr_win / 2 , height / 2 - robot.h_corr_win / 2 )
+			p2 = ( width / 2 + robot.current_w_corr_win / 2 , height / 2 + robot.h_corr_win / 2 )
+			cv2.rectangle(img, p1, p2 , (0,0,255))
+			cv2.imshow("Image", np.asarray(img))
+
+		if k == 27:
+			cv2.destroyAllWindows()
+			break
+		
+		time.sleep(delay)
+
 if __name__=="__main__":
 	robot = get_robot()
-	filename = "lab4.map"
+	filename = "map3.map"
+
+	thread.start_new_thread( show_image, ("Thread-1",robot, ) )
 
 	loc=Localization(filename)
 	observation = do_observation_front(robot)
