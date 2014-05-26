@@ -7,7 +7,9 @@ class FileLoader(object):
 		self.walls  = {}
 		self.starts = []
 		self.goals  = []
-		self.dims = []
+
+		self.max_cols = None
+		self.max_rows = None
 		
 		self.undirected_graph = UndirectedGraph()
 		self.directed_graph = DirectedGraph()
@@ -21,12 +23,12 @@ class FileLoader(object):
 
 		# Reading walls: [row, col, up, left, down, right]
 		print '\t> Parsing walls'
-		[MAX_ROW, MAX_COL] = f.readline().split(' ')
-		MAX_ROW = int(MAX_ROW)
-		MAX_COL = int(MAX_COL)
-		self.dims = [MAX_ROW, MAX_COL]
 
-		for i in range(0, MAX_ROW*MAX_COL):     
+		[self.max_rows, self.max_cols] = f.readline().split(' ')
+		self.max_rows = int(self.max_rows)
+		self.max_cols = int(self.max_cols)
+
+		for i in range(0, self.max_rows*self.max_cols):     
 			data = f.readline().split(' ')
 			print 'data: ', data
 			data = map(int, data)
@@ -146,7 +148,7 @@ class FileLoader(object):
 				elif orientation == Orientation.right:
 					test_node = (aux_node[0], aux_node[1] + 1, aux_node[2])
 
-				if not test_node in self.graph.edges[aux_node]: #BUG
+				if not test_node in self.undirected_graph.edges[aux_node]: #BUG
 					break
 				aux_node = test_node
 				distance = distance + 1
@@ -165,4 +167,4 @@ class FileLoader(object):
         
 		#for node in map_nodes:
 		#	print node[0]," ",node[1]," ",map_nodes[node]
-		return json.dumps({ "size": self.dims, "map": map_nodes })
+		return json.dumps({ "size": [self.max_rows, self.max_cols] , "map": map_nodes })

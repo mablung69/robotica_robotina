@@ -83,7 +83,7 @@ def astar(graph, initial_node, goal_node, h):
 def shortest_path(graph, initial_node, goal_node, h):
     paths = astar(graph, initial_node, goal_node, h)
     route = [goal_node]
-
+    
     while goal_node != initial_node:
         route.append(paths[goal_node])
         goal_node = paths[goal_node]
