@@ -61,7 +61,7 @@ class FileLoader(object):
 				orientation = 2
 			else:
 				orientation = 3
-			self.goals.add((row,col,orientation))
+			self.goals.append((row,col,orientation))
 		
 		f.close()
 
@@ -114,13 +114,13 @@ class FileLoader(object):
 
 		for node, ws in self.walls.items():
 			if ws[0] == 0:
-				self.directed_graph.graph.add_edge((node[0],node[1],Orientation.up), (node[0]+1,node[1],Orientation.up))
+				self.directed_graph.add_edge((node[0],node[1],Orientation.up), (node[0]+1,node[1],Orientation.up))
 			if ws[1] == 0:
-				self.directed_graph.graph.add_edge((node[0],node[1],Orientation.left), (node[0],node[1]-1,Orientation.left))
+				self.directed_graph.add_edge((node[0],node[1],Orientation.left), (node[0],node[1]-1,Orientation.left))
 			if ws[2] == 0:
-				self.directed_graph.graph.add_edge((node[0],node[1],Orientation.down), (node[0]-1,node[1],Orientation.down))
+				self.directed_graph.add_edge((node[0],node[1],Orientation.down), (node[0]-1,node[1],Orientation.down))
 			if ws[3] == 0:
-				self.directed_graph.graph.add_edge((node[0],node[1],Orientation.right), (node[0],node[1]+1,Orientation.right))
+				self.directed_graph.add_edge((node[0],node[1],Orientation.right), (node[0],node[1]+1,Orientation.right))
 
 	def estimate_distances(self):
 		#print '> Exploring distances'

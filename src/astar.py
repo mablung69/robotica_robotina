@@ -96,7 +96,7 @@ def shortest_path(graph, initial_node, goal_node, h):
 if __name__ == '__main__':
     import math
     sldist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
-    g = Graph()
+    g = DirectedGraph()
     g.add_node((0, 0))
     g.add_node((1, 1))
     g.add_node((1, 0))
