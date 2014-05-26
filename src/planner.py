@@ -2,12 +2,11 @@ import math
 from graph import DirectedGraph
 from astar import shortest_path
 from enums import Orientation
-from localization import Localization
 
 class Planner(object):
 
 	def __init__(self):
-		pass
+		self.graph = DirectedGraph()
 
 	def build_graph(self,file_name):
 		walls = {}
@@ -94,17 +93,17 @@ class Planner(object):
 		print '\t Path:  ', solution
 		return [solution,walls]
 
-	def solve(self,graph,start,goals):
+	def solve(self,start,goals):
 		print '==> Solving shortest path with A* Algorithm'
 
 		print '\t Start: ', start
 		print '\t Goal:  ', goals
 
-		for node, edges in graph.edges.items():
+		for node, edges in self.graph.edges.items():
 			print node, ': ', edges
 
 		dist = lambda c1, c2: math.sqrt((c2[0] - c1[0])**2 + (c2[1] - c1[1])**2)
-		path = shortest_path(graph, start, goals[0], dist)
+		path = shortest_path(self.graph, start, goals[0], dist)
 
 		return path
 
