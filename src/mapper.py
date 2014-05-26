@@ -23,7 +23,7 @@ class Mapper(object):
 		for r in xrange(0, self.max_rows):
 			for c in xrange(0, self.max_cols):
 				for o in orientations:
-					graph.add_node(r,c,o)
+					graph.add_node((r,c,o))
 
 		# Add turn right and left to all node. 
 		# Add move to all posible nodes
@@ -104,7 +104,13 @@ class Mapper(object):
 
 			orientation = (orientation+2)%4
 
-	if __name__ == "__main__":
-		pass
+if __name__ == "__main__":
+	from file_loader import FileLoader
+	f_loader = FileLoader()
+	f_loader.read_map('Mapas/With_Start/lab4_2.map')
+
+	location = f_loader.starts[0]
+	goals    = f_loader.goals
+	mapper   = Mapper(3,3,location,goals)
 
 
