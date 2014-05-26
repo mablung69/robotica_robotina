@@ -1,11 +1,13 @@
 from enums import Orientation
 from graph import UndirectedGraph, DirectedGraph
+import json
 
 class FileLoader(object):
 	def __init__(self):
 		self.walls  = {}
 		self.starts = []
 		self.goals  = []
+		self.dims = []
 		
 		self.undirected_graph = UndirectedGraph()
 		self.directed_graph = DirectedGraph()
@@ -22,6 +24,7 @@ class FileLoader(object):
 		[MAX_ROW, MAX_COL] = f.readline().split(' ')
 		MAX_ROW = int(MAX_ROW)
 		MAX_COL = int(MAX_COL)
+		self.dims = [MAX_ROW, MAX_COL]
 
 		for i in range(0, MAX_ROW*MAX_COL):     
 			data = f.readline().split(' ')
@@ -151,3 +154,15 @@ class FileLoader(object):
 			self.distance_node.setdefault(distance, [])
 			self.distance_node[distance].append(node)
 			self.node_distance[node] = distance
+
+	def get_json_map(self):
+		map_nodes = {}
+		graph = self.directed_graph
+
+		for node in graph.nodes:
+			if not map_nodes.has_key(str((node[0],node[1]))):
+				map_nodes[str((node[0],node[1]))] = ( self.walls[(node[0],node[1])] ) 
+        
+		#for node in map_nodes:
+		#	print node[0]," ",node[1]," ",map_nodes[node]
+		return json.dumps({ "size": self.dims, "map": map_nodes })

@@ -20,9 +20,7 @@ class DirectedGraph(object):
         self.edges[from_node].append(to_node)
         self.distances[(from_node, to_node)] = distance
 
-    def print_map(self):
-        for node in self.nodes:
-            print node
+
 
 
 class UndirectedGraph(object):
@@ -52,7 +50,7 @@ if __name__ == '__main__':
     from file_loader import FileLoader
     loader=FileLoader()
 
-    loader.read_map("Mapas/With_Start/lab4_2.map")
+    loader.read_map("Mapas/With_Start/map1.map")
     loader.generate_directed_graph()
 
-    loader.directed_graph.print_map()
+    print loader.get_json_map()
