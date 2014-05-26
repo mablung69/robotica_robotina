@@ -19,7 +19,51 @@ class DirectedGraph(object):
         self.edges.setdefault(from_node, [])
         self.edges[from_node].append(to_node)
         self.distances[(from_node, to_node)] = distance
+    
+    def get_json_map(self):
+        
+        import json
 
+        map_nodes = {}
+        graph = self
+
+        max_rows = 0
+        max_cols = 0
+
+        for node in graph.nodes:
+            if not map_nodes.has_key(str((node[0],node[1]))):
+                walls = []
+          
+                #Top wall
+                if (node[0]+1, node[1], 0) in graph.nodes and (node[0]+1,node[1],0) in graph.edges[(node[0],node[1],0)]:
+                    walls.append(0)
+                else:
+                    walls.append(1)
+                #Left wall
+                if (node[0], node[1]-1, 1) in graph.nodes and (node[0], node[1]-1, 1) in graph.edges[(node[0],node[1],1)]:
+                    walls.append(0)
+                else:
+                    walls.append(1)
+                #Bot wall
+                if (node[0]-1, node[1], 2) in graph.nodes and (node[0]-1, node[1], 2) in graph.edges[(node[0],node[1],2)]:
+                    walls.append(0)
+                else:
+                    walls.append(1)
+                #Right wall
+                if (node[0], node[1]+1, 3) in graph.nodes and (node[0], node[1]+1, 3) in graph.edges[(node[0],node[1],3)]:
+                    walls.append(0)
+                else:
+                    walls.append(1)
+
+                if node[0] + 1 > max_rows:
+                    max_rows = node[0] + 1
+
+                if node[1] + 1 > max_cols:
+                    max_cols = node[1] + 1
+
+                map_nodes[str((node[0],node[1]))] = walls
+        
+        return json.dumps({ "size": [max_rows, max_cols] , "map": map_nodes })
 
 
 
@@ -50,7 +94,7 @@ if __name__ == '__main__':
     from file_loader import FileLoader
     loader=FileLoader()
 
-    loader.read_map("Mapas/With_Start/map1.map")
+    loader.read_map("Mapas/With_Start/lab4.map")
     loader.generate_directed_graph()
 
-    print loader.get_json_map()
+    print loader.directed_graph.get_json_map()

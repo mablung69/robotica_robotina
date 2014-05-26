@@ -1,6 +1,5 @@
 from enums import Orientation
 from graph import UndirectedGraph, DirectedGraph
-import json
 
 class FileLoader(object):
 	def __init__(self):
@@ -156,15 +155,3 @@ class FileLoader(object):
 			self.distance_node.setdefault(distance, [])
 			self.distance_node[distance].append(node)
 			self.node_distance[node] = distance
-
-	def get_json_map(self):
-		map_nodes = {}
-		graph = self.directed_graph
-
-		for node in graph.nodes:
-			if not map_nodes.has_key(str((node[0],node[1]))):
-				map_nodes[str((node[0],node[1]))] = ( self.walls[(node[0],node[1])] ) 
-        
-		#for node in map_nodes:
-		#	print node[0]," ",node[1]," ",map_nodes[node]
-		return json.dumps({ "size": [self.max_rows, self.max_cols] , "map": map_nodes })
