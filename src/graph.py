@@ -27,6 +27,15 @@ class DirectedGraph(object):
 
         with open(path, 'w') as outfile:
             json.dump(data, outfile)
+
+    def push_map(self,location=(0,0,0),plan=[]):
+        import pusher
+        import json
+
+        data = self.get_map(location,plan)
+
+        p = pusher.Pusher(app_id='76093', key='60ac382824573be1ddd2', secret='d43a1c915d852c869dc0')
+        p['robotina'].trigger('map',{'map': json.dumps(data)})
     
     def get_map(self,location,plan):
         

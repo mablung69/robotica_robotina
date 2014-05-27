@@ -179,7 +179,8 @@ if __name__ == "__main__":
 
 		action = mapper.plan_action()
 
-		mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)	
+		#mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)	
+		mapper.graph.push_map(mapper.location,mapper.current_plan)	
 		sleep(1)
 
 		print '[DEBUG] Action ', action
