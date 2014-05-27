@@ -19,6 +19,15 @@ $(function () {
         drawGraph(graph);
     });
 
+    //Polling mode
+    /*setInterval(function(){
+        $.get( "/test.json", function( data ) {
+            graph =  data ;
+            console.log(graph);
+            drawGraph(graph);
+        });
+    }, 500);*/
+
     function drawGraph(graph)
     {
         context.clearRect(0, 0, canvas.width, canvas.height);
