@@ -21,21 +21,27 @@ class DirectedGraph(object):
         self.distances[(from_node, to_node)] = distance
 
     def write_map(self,path,location=(0,0,0),plan=[]):
-        import json
+        try:
+            import json
 
-        data = self.get_map(location,plan)
+            data = self.get_map(location,plan)
 
-        with open(path, 'w') as outfile:
-            json.dump(data, outfile)
+            with open(path, 'w') as outfile:
+                json.dump(data, outfile)
+        except:
+            pass
 
     def push_map(self,location=(0,0,0),plan=[]):
-        import pusher
-        import json
+        try:
+            import pusher
+            import json
 
-        data = self.get_map(location,plan)
+            data = self.get_map(location,plan)
 
-        p = pusher.Pusher(app_id='76093', key='60ac382824573be1ddd2', secret='d43a1c915d852c869dc0')
-        p['robotina'].trigger('map',{'map': json.dumps(data)})
+            p = pusher.Pusher(app_id='76093', key='60ac382824573be1ddd2', secret='d43a1c915d852c869dc0')
+            p['robotina'].trigger('map',{'map': json.dumps(data)})
+        except:
+            pass
     
     def get_map(self,location,plan):
         
