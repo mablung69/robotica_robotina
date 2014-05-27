@@ -143,6 +143,8 @@ class Mapper(object):
 
 if __name__ == "__main__":
 	from file_loader import FileLoader
+	from time import sleep
+
 	f_loader = FileLoader()
 	f_loader.read_map('Mapas/With_Start/lab4.map')
 	f_loader.generate_undirected_graph()
@@ -161,8 +163,10 @@ if __name__ == "__main__":
 
 	test_path = [mapper.location]
 	test_observation = []
-	
+	sleep(1)
+
 	while True:
+
 		observation = f_loader.node_distance[mapper.location]
 		mapper.add_observation(observation)
 
@@ -171,8 +175,10 @@ if __name__ == "__main__":
 		print '[DEBUG] Observation ', observation
 		print '[DEBUG] Edges ', mapper.graph.edges[mapper.location]
 
+		mapper.graph.write_map("../web_server/test.json",mapper.location)	
+		sleep(1)
+		
 		action = mapper.plan_action()
-
 
 		print '[DEBUG] Action ', action
 
@@ -181,8 +187,12 @@ if __name__ == "__main__":
 		else:
 			break
 
+
 		test_path.append(mapper.location)
 		test_observation.append(observation)
+
+
+
 
 
 	print 'Output PATH: ', test_path

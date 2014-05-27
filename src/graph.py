@@ -19,11 +19,17 @@ class DirectedGraph(object):
         self.edges.setdefault(from_node, [])
         self.edges[from_node].append(to_node)
         self.distances[(from_node, to_node)] = distance
-    
-    def get_json_map(self):
-        
+
+    def write_map(self,path,location=(0,0,0)):
         import json
 
+        data = self.get_map(location)
+
+        with open(path, 'w') as outfile:
+            json.dump(data, outfile)
+    
+    def get_map(self,location):
+        
         map_nodes = {}
         graph = self
 
@@ -63,7 +69,7 @@ class DirectedGraph(object):
 
                 map_nodes[str((node[0],node[1]))] = walls
         
-        return json.dumps({ "size": [max_rows, max_cols] , "map": map_nodes })
+        return { "size": [max_rows, max_cols], "map": map_nodes, "location": location }
 
 
 
@@ -97,4 +103,4 @@ if __name__ == '__main__':
     loader.read_map("Mapas/With_Start/lab4.map")
     loader.generate_directed_graph()
 
-    print loader.directed_graph.get_json_map()
+    print loader.directed_graph.get_map()

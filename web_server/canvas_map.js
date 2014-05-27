@@ -8,14 +8,17 @@ $(function () {
     var context = canvas.getContext('2d');
     var graph = null;
 
-    $.get( "/test.json", function( data ) {
-        graph =  data ;
-        console.log(graph);
-        drawGraph(graph);
-    });
+    setInterval(function(){
+        $.get( "/test.json", function( data ) {
+            graph =  data ;
+            console.log(graph);
+            drawGraph(graph);
+        });
+    }, 500);
 
     function drawGraph(graph)
     {
+        context.clearRect(0, 0, canvas.width, canvas.height);
 
         var margin  = 20;
         var width = canvas.width;
@@ -43,8 +46,7 @@ $(function () {
             }
         }
 
-        console.log(cell_size);
-
+        drawRobot(graph.size[0] - graph.location[0] - 1,graph.location[1],graph.location[2],cell_size,margin);
     }
 
     function drawCell(row,col,walls,cell_size,margin )
@@ -93,8 +95,26 @@ $(function () {
             context.lineTo(botRightX, botRightY);
             context.stroke();
         }
+    }
 
+    function drawRobot(row,col,ori,cell_size,margin)
+    {
+        var centerX = margin + (cell_size * (col) ) + cell_size / 2;
+        var centerY = margin + (cell_size * (row) ) + cell_size / 2;
+        var radius = cell_size / 3;
+        var startAngle = 5* Math.PI / 4 - ori * (Math.PI / 2) ;
+        var endAngle = startAngle + Math.PI / 2;
 
+        context.beginPath();
+        context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+        context.stroke();
+
+        context.beginPath();
+        context.arc(centerX, centerY, radius, startAngle, endAngle, false);
+        context.closePath();
+        context.lineWidth = 1;
+        context.strokeStyle = '#000000';
+        context.stroke();
     }
 
 });
