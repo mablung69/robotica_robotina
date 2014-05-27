@@ -14,7 +14,7 @@ $(function () {
     var channel = pusher.subscribe('robotina');
 
     channel.bind('map', function(data) {
-        graph =  data.map ;
+        graph =  $.parseJSON(data.map) ;
         console.log(graph);
         drawGraph(graph);
     });
