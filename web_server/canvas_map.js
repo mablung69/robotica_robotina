@@ -10,13 +10,14 @@ $(function () {
     var context = canvas.getContext('2d');
     var graph = null;
 
-    setInterval(function(){
-        $.get( "/test.json", function( data ) {
-            graph =  data ;
-            console.log(graph);
-            drawGraph(graph);
-        });
-    }, 500);
+    var pusher = new Pusher('60ac382824573be1ddd2');
+    var channel = pusher.subscribe('robotina');
+
+    channel.bind('map', function(data) {
+        graph =  data ;
+        console.log(graph);
+        drawGraph(graph);
+    });
 
     function drawGraph(graph)
     {
