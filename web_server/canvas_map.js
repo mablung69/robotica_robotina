@@ -1,5 +1,7 @@
 $(function () {
 
+    $.ajaxSetup({ cache: false });
+
     console.log(".---------------------------.");
     console.log("| *   Starting Robotina   * |");
     console.log("'---------------------------'");
@@ -45,6 +47,8 @@ $(function () {
                 drawCell( node[0], node[1], walls, cell_size, margin );
             }
         }
+
+        drawPlan(graph.plan,graph.size[0],cell_size,margin);
 
         drawRobot(graph.size[0] - graph.location[0] - 1,graph.location[1],graph.location[2],cell_size,margin);
     }
@@ -106,15 +110,51 @@ $(function () {
         var endAngle = startAngle + Math.PI / 2;
 
         context.beginPath();
+        context.lineWidth = 1;
+        context.strokeStyle = '#000000';
         context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
         context.stroke();
 
         context.beginPath();
-        context.arc(centerX, centerY, radius, startAngle, endAngle, false);
-        context.closePath();
         context.lineWidth = 1;
         context.strokeStyle = '#000000';
+        context.arc(centerX, centerY, radius, startAngle, endAngle, false);
+        context.closePath();
         context.stroke();
+    }
+
+    function drawPlan(plan,size,cell_size,margin)
+    {
+        var last_step = null;
+        var last_row = null;
+        var last_col = null;
+        var centerLastX = null;
+        var centerLastY = null;
+
+        for (var step in plan){
+
+            step = plan[step];
+            var row = size - step[0] -1;
+            var col = step[1];
+            var centerNextX = margin + (cell_size * (col) ) + cell_size / 2;
+            var centerNextY = margin + (cell_size * (row) ) + cell_size / 2;
+
+            if(last_step !== null)
+            {
+                context.beginPath();
+                context.moveTo(centerLastX, centerLastY);
+                context.lineTo(centerNextX, centerNextY);
+                context.lineWidth = 5;
+                context.strokeStyle = "rgba(0, 255, 0, 0.2)";
+                context.stroke();
+            }
+            
+            last_step = step;
+            last_row = row;
+            last_col = col;
+            centerLastX = centerNextX;
+            centerLastY = centerNextY;
+        }
     }
 
 });

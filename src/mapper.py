@@ -8,6 +8,7 @@ class Mapper(object):
 		self.max_cols = max_cols
 		self.debug = debug
 		self.goal = goal
+		self.current_plan = []
 
 		self.location = location
 		self.graph = self.init_map()
@@ -45,8 +46,9 @@ class Mapper(object):
 		planner = Planner()
 		planner.graph = self.graph
 		path = planner.solve(self.location, self.goal)
+		self.current_plan = path
 
-		print '[DEBUG] Path: ', path
+		print '[DEBUG] Planned Path: ', path
 
 		if len(path) <= 1:
 			return False
@@ -175,10 +177,10 @@ if __name__ == "__main__":
 		print '[DEBUG] Observation ', observation
 		print '[DEBUG] Edges ', mapper.graph.edges[mapper.location]
 
-		mapper.graph.write_map("../web_server/test.json",mapper.location)	
-		sleep(1)
-		
 		action = mapper.plan_action()
+
+		mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)	
+		sleep(1)
 
 		print '[DEBUG] Action ', action
 
@@ -190,9 +192,6 @@ if __name__ == "__main__":
 
 		test_path.append(mapper.location)
 		test_observation.append(observation)
-
-
-
 
 
 	print 'Output PATH: ', test_path
