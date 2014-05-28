@@ -28,8 +28,8 @@ class DirectedGraph(object):
 
             with open(path, 'w') as outfile:
                 json.dump(data, outfile)
-        except:
-            pass
+        except Exception as e:
+            print e
 
     def push_map(self,location=(0,0,0),plan=[]):
         try:
@@ -40,8 +40,8 @@ class DirectedGraph(object):
 
             p = pusher.Pusher(app_id='76093', key='60ac382824573be1ddd2', secret='d43a1c915d852c869dc0')
             p['robotina'].trigger('map',{'map': json.dumps(data)})
-        except:
-            pass
+        except Exception as e:
+            print e
     
     def get_map(self,location,plan):
         

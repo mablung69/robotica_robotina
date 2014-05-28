@@ -17,7 +17,7 @@ from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 from tf import transformations as trans
 from RobotinaImage import RobotinaImage
-from enums import Action
+from ..enums import Action
 
 _turtlebot_singleton = None
 
@@ -404,6 +404,13 @@ class Turtlebot(object):
         except CvBridgeError, e:
             print e
 
+    def get_observation(self):
+        while self.current_max_depth == None:
+            self.wait(0.5)
+        actual_depth=self.current_max_depth
+        obs_init=max(int(round((actual_depth-0.5)/0.8,0)),0)
+        return obs_init
+
     def __rgb_handler(self,data):
         
         self.current_rgb_image=data
@@ -525,8 +532,13 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
+
+        self.align_wall(0.1)
+
         if obs_init <= 4:
             self.correct_short_angle()
+
+        self.align_wall(0.1)
 
     def move_maze_distance(self, distance,lin_velocity):
         print '>> Tuttlebot::Move maze distance(distance, velocity)', distance, ' , ', lin_velocity
@@ -557,30 +569,39 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)    
         self.say(0)
 
-        if self.current_max_depth < 0.8:
-            self.align_wall(lin_velocity)
+        self.align_wall(lin_velocity)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
         if obs_init <= 4:
             self.correct_short_angle()
 
+        self.align_wall(lin_velocity)
+
+
     def align_wall(self, lin_velocity):
         self.__exit_if_movement_disabled()
         r = rospy.Rate(100)
 
-        while self.current_max_depth == None:
-            self.say("Waiting for kinect")
-            r.sleep()
+        obs_init=self.get_observation()
 
         msg = Twist()
         msg.linear.x = lin_velocity
 
+        if self.current_max_depth > (0.5+0.8*obs_init):
+            msg.linear.x = lin_velocity
+        else:
+            msg.linear.x = -lin_velocity
+
+        threshold = 0.1
+
         while not rospy.is_shutdown():
-            if self.current_max_depth <= 0.6:
+            self.play_sound(0)
+            obs_init=self.get_observation()
+            if abs(self.current_max_depth - (0.5+0.8*obs_init)) < threshold:
                 break
             self.__cmd_vel_pub.publish(msg)
             r.sleep()
-
+            
         msg.linear.x = 0.0
         self.__cmd_vel_pub.publish(msg)    
         self.say(0)
@@ -598,11 +619,12 @@ class Turtlebot(object):
         msg = Twist()
         
         angle0 = self.__cumulative_angle
-        r = rospy.Rate(100)
-        max_iter = 50
+        r = rospy.Rate(1000)
+        max_iter = 1000
         i = 0
         while not rospy.is_shutdown():
-            print(i," : ",self.current_laser_depth[0] - self.current_laser_depth[2])
+            self.play_sound(1)
+            print i," : ", abs(self.current_laser_depth[0] - self.current_laser_depth[2])
             if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
                 msg.angular.z = -np.abs(0.5)
             else: # Turn left
@@ -612,7 +634,9 @@ class Turtlebot(object):
             if obs_init > 1:
                 obs_init = min(1,obs_init)
                 msg.angular.z = - msg.angular.z
-            if (abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init)**2) or (i > max_iter):
+            else:
+                obs_init = 1
+            if (abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init )**1) or (i > max_iter):
                 break  
 
             self.__cmd_vel_pub.publish(msg)
@@ -624,31 +648,6 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)
         self.wait(1)
 
- 
-    def correct_long_angle(self):
-        pass
-
-    def move_maze_wall(self, lin_velocity):
-        move_threshold = 0.6
-        self.__exit_if_movement_disabled()
-        # No bounds checking because we trust people. Not like William.
-        r = rospy.Rate(1)
-        while not self.__have_odom and not rospy.is_shutdown():
-            self.say("Waiting for odometry")
-            r.sleep()
-
-        while self.current_max_depth == None:
-            self.say("Waiting for kinect")
-            r.sleep()
-
-        r = rospy.Rate(100)
-        while not rospy.is_shutdown():
-            if self.current_max_depth <= move_threshold:
-                break
-            self.move_maze(lin_velocity, 0.0)
-            r.sleep()
-        self.move(0,0)
-
     def apply_action(self,action,observation):
         if action==Action.move:
             if observation>0:
@@ -657,10 +656,10 @@ class Turtlebot(object):
             else:
                 return False
         elif action==Action.turn_left:
-            self.turn_maze_angle(math.pi/2,0.8)
+            self.turn_maze_angle(math.pi/2,1.2)
             return True
         elif action==Action.turn_right:
-            self.turn_maze_angle(-math.pi/2,0.8)
+            self.turn_maze_angle(-math.pi/2,1.2)
             return True
         else:
             raise Exception("acton invalid")

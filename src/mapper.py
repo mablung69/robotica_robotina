@@ -48,8 +48,6 @@ class Mapper(object):
 		path = planner.solve(self.location, self.goal)
 		self.current_plan = path
 
-		print '[DEBUG] Planned Path: ', path
-
 		if len(path) <= 1:
 			return False
 		else:
@@ -165,25 +163,17 @@ if __name__ == "__main__":
 
 	test_path = [mapper.location]
 	test_observation = []
-	sleep(1)
 
 	while True:
 
 		observation = f_loader.node_distance[mapper.location]
 		mapper.add_observation(observation)
 
-		print '\n[DEBUG] Path ', test_path
-		print '[DEBUG] Location ', mapper.location
-		print '[DEBUG] Observation ', observation
-		print '[DEBUG] Edges ', mapper.graph.edges[mapper.location]
-
 		action = mapper.plan_action()
 
 		#mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)	
-		mapper.graph.push_map(mapper.location,mapper.current_plan)	
-		sleep(1)
-
-		print '[DEBUG] Action ', action
+		#mapper.graph.push_map(mapper.location,mapper.current_plan)	
+		#sleep(1)
 
 		if type(action) == type(1):
 			mapper.apply_action(action)
