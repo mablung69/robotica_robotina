@@ -1,6 +1,7 @@
 from enums import Orientation, Action, Sign, Player
 from graph import DirectedGraph
 from astar import shortest_path
+from planner import Planner
 
 class FutbolPlanner(object):
 	def __init__(self, graph, start):
@@ -59,6 +60,45 @@ class FutbolPlanner(object):
 				to_node = (from_node[0], from_node[1]+1, from_node[2])
 			self.graph.disconect(from_node, to_node)
 
+		if sign in [Sign.turn_left, Sign.turn_right]:
+			stop_list = [self.actual_position]
+			target = self.bfs_search(stop_list=stop_list)
+			if target != False:
+				self.target = target
 
-	def bfs_search(self):
-		pass
+
+	def bfs_search(self, stop_list=[]):
+		stack = [self.actual_position]
+		while len(stack) > 0:
+			node = stack.pop()
+			if not node in self.visited:
+				self.target = node
+				return node
+
+			for s in self.graph.edges[node]:
+				if not s in stop_list:
+					stack.append(s)
+
+		return False
+
+	def get_action(self):
+		planner = Planner()
+		planner.graph = self.graph
+		path = planner.solve(self.location, self.goal)
+		self.current_plan = path
+
+		if len(path) <= 1:
+			return False
+		else:
+			next_state = path[1]
+			turn = next_state[2] - self.location[2]
+			if turn == 0:
+				return Action.move
+			elif turn==-1:  
+				return Action.turn_right
+			elif turn==1:
+				return Action.turn_left
+			elif turn == 3:
+				return Action.turn_right
+			elif turn == -3:
+				return Action.turn_left
