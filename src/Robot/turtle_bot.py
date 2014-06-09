@@ -19,9 +19,12 @@ from tf import transformations as trans
 from RobotinaImage import RobotinaImage
 from ..enums import Action
 
+import time
+
 _turtlebot_singleton = None
 
 import pickle
+from ..face_detector import FaceDetector
 
 
 def get_robot():
@@ -99,6 +102,7 @@ class Turtlebot(object):
         self.left_column = None
         self.right_column = None
 
+        self.pickles = []
         self.current_w_corr_win = self.w_corr_win
 
         self.__cmd_vel_pub = rospy.Publisher('/mobile_base/commands/velocity', Twist)
@@ -122,24 +126,30 @@ class Turtlebot(object):
         
         self.__rgb_img= rospy.Subscriber('/camera/rgb/image_color',Image,self.__rgb_handler)
 
-    def handle_show_image(req):
+    def recognize(self):
+        print "ENTRE A RECOGNIZE"
 
-        rospy.loginfo("New request...")
+        #cv_image = CvBridge().imgmsg_to_cv2(self.current_rgb_image, self.current_rgb_image.encoding)
 
-        #se transforma la imagen a un formato que puede ser usado por openvc
-        cv_image = CvBridge().imgmsg_to_cv2(req.image, req.image.encoding)
+        cv_image = np.asarray(self.current_cv_rgb_image)
 
-        [height, width, depth] = cv_image.shape
+        #self.pickles.append(cv_image)
 
-        rospy.loginfo("Image: height: " + str(height) + " width: " + str(width) + " depth: " + str(depth))
+        #time.sleep(0.5)
 
-        resized_image = cv2.resize(cv_image, (112, 92))
-        gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
+        fc = FaceDetector()
 
-        [p_label, p_confidence] = model.predict(gray)
+        detections = fc.detect(cv_image)
+
+        for d in detections:
+            [p_label, p_confidence] = model.predict(d)
+            print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence) 
+
+        if len(detections) == 0:
+            print "NO HAY CARA !"
 
         #respuesta del request
-        return [p_label,p_confidence]
+        #return [p_label,p_confidence]
 
     def move(self, linear=0.0, angular=0.0):
         """Moves the robot at a given linear speed and angular velocity
@@ -576,7 +586,7 @@ class Turtlebot(object):
 
         d0 = self.current_max_depth
         while not rospy.is_shutdown():
-            print(self.left_column,"   ",self.right_column)
+            #print(self.left_column,"   ",self.right_column)
             delta = d0 - self.current_max_depth
             #
             #print msg.angular.z
@@ -645,7 +655,7 @@ class Turtlebot(object):
         i = 0
         while not rospy.is_shutdown():
             self.play_sound(1)
-            print i," : ", abs(self.current_laser_depth[0] - self.current_laser_depth[2])
+            #print i," : ", abs(self.current_laser_depth[0] - self.current_laser_depth[2])
             if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
                 msg.angular.z = -np.abs(0.5)
             else: # Turn left
@@ -673,14 +683,15 @@ class Turtlebot(object):
         if action==Action.move:
             if observation>0:
                 self.move_maze_distance(0.8,0.2)
-                return True
             else:
                 return False
         elif action==Action.turn_left:
             self.turn_maze_angle(math.pi/2,1.2)
-            return True
         elif action==Action.turn_right:
             self.turn_maze_angle(-math.pi/2,1.2)
-            return True
+        elif action==Action.recognize:
+            self.recognize()
         else:
             raise Exception("acton invalid")
+
+        return True

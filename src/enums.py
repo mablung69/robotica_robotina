@@ -8,6 +8,7 @@ class Action(object):
 	move       = 0
 	turn_left  = 1
 	turn_right = 2
+	recognize = 3
 
 class Sign(object):
 	turn_left 		= 1
@@ -20,4 +21,5 @@ class Player(object):
 	alexis 	= 1
 	claudio = 2
 	arturo	= 3
+
 	
