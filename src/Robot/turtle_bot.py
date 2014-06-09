@@ -41,6 +41,8 @@ class Turtlebot(object):
     speed_const = max_linear / deltaD
     v0 = speed_const * d2
     
+    path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
+    model=cv2.createEigenFaceRecognizer()
 
     def __init__(self):
 
@@ -120,6 +122,24 @@ class Turtlebot(object):
         
         self.__rgb_img= rospy.Subscriber('/camera/rgb/image_color',Image,self.__rgb_handler)
 
+    def handle_show_image(req):
+
+        rospy.loginfo("New request...")
+
+        #se transforma la imagen a un formato que puede ser usado por openvc
+        cv_image = CvBridge().imgmsg_to_cv2(req.image, req.image.encoding)
+
+        [height, width, depth] = cv_image.shape
+
+        rospy.loginfo("Image: height: " + str(height) + " width: " + str(width) + " depth: " + str(depth))
+
+        resized_image = cv2.resize(cv_image, (112, 92))
+        gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
+
+        [p_label, p_confidence] = model.predict(gray)
+
+        #respuesta del request
+        return [p_label,p_confidence]
 
     def move(self, linear=0.0, angular=0.0):
         """Moves the robot at a given linear speed and angular velocity
@@ -408,7 +428,7 @@ class Turtlebot(object):
         while self.current_max_depth == None:
             self.wait(0.5)
         actual_depth=self.current_max_depth
-        obs_init=max(int(round((actual_depth-0.5)/0.8,0)),0)
+        obs_init=max(int(round((actual_depth-0.5)/0.8,0)),-1)
         return obs_init
 
     def __rgb_handler(self,data):
@@ -584,27 +604,28 @@ class Turtlebot(object):
 
         obs_init=self.get_observation()
 
-        msg = Twist()
-        msg.linear.x = lin_velocity
-
-        if self.current_max_depth > (0.5+0.8*obs_init):
+        if obs_init >= 0:
+            msg = Twist()
             msg.linear.x = lin_velocity
-        else:
-            msg.linear.x = -lin_velocity
 
-        threshold = 0.1
+            if self.current_max_depth > (0.5+0.8*obs_init):
+                msg.linear.x = lin_velocity
+            else:
+                msg.linear.x = -lin_velocity
 
-        while not rospy.is_shutdown():
-            self.play_sound(0)
-            obs_init=self.get_observation()
-            if abs(self.current_max_depth - (0.5+0.8*obs_init)) < threshold:
-                break
-            self.__cmd_vel_pub.publish(msg)
-            r.sleep()
-            
-        msg.linear.x = 0.0
-        self.__cmd_vel_pub.publish(msg)    
-        self.say(0)
+            threshold = 0.1
+
+            while not rospy.is_shutdown():
+                self.play_sound(0)
+                obs_init=self.get_observation()
+                if abs(self.current_max_depth - (0.5+0.8*obs_init)) < threshold:
+                    break
+                self.__cmd_vel_pub.publish(msg)
+                r.sleep()
+                
+            msg.linear.x = 0.0
+            self.__cmd_vel_pub.publish(msg)    
+            self.say(0)
 
     def correct_short_angle(self):
 
