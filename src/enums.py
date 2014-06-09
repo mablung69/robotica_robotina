@@ -8,3 +8,16 @@ class Action(object):
 	move       = 0
 	turn_left  = 1
 	turn_right = 2
+
+class Sign(object):
+	turn_left 		= 1
+	turn_right 		= 2
+	dont_turn_left 	= 3
+	dont_turn_right = 4
+
+class Player(object):
+	eduardo = 0
+	alexis 	= 1
+	claudio = 2
+	arturo	= 3
+	

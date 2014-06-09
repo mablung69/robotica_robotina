@@ -14,6 +14,10 @@ class DirectedGraph(object):
     def add_edge(self, from_node, to_node, distance=1):
         print '\t>>DirectedGraph::Adding edge: ', from_node, ' - ', to_node
         self._add_edge(from_node, to_node, distance)
+
+    def disconect(self, from_node, to_node):
+        if to_node in self.edges[from_node]:
+            self.edges[from_node].remove(to_node)
  
     def _add_edge(self, from_node, to_node, distance):
         self.edges.setdefault(from_node, [])
