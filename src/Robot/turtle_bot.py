@@ -133,9 +133,9 @@ class Turtlebot(object):
 
         cv_image = np.asarray(self.current_cv_rgb_image)
 
-        #self.pickles.append(cv_image)
+        self.pickles.append(cv_image)
 
-        #time.sleep(0.5)
+        time.sleep(0.5)
 
         fc = FaceDetector()
 

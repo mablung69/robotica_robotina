@@ -87,9 +87,12 @@ if __name__=="__main__":
 			robot.apply_action(action,observation)
 
 
-			if robot.get_observation() <= 0:
+			if robot.get_observation() <= 10:
 					robot.apply_action(Action.recognize,0)
-				#pickle.dump(robot.pickles, open('pickles.p', 'wb'))
+				
+				f = open('pickles.p', 'wb')
+				pickle.dump(robot.pickles, f)
+				f.close()
 
 		else:
 			break
