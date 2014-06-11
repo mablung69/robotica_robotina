@@ -7,6 +7,7 @@ import numpy as np
 import thread
 import time
 import multiprocessing
+import pickle
 
 #import Clases
 from ..localization import Localization
@@ -27,13 +28,13 @@ def show_image(threadName,robot, delay = 0):
 	while True:
 		k = cv2.waitKey(1)
 
-		if robot.current_cv_image != None:
-			img = np.asarray(robot.current_cv_image)
-			height, width = img.shape
+		if robot.current_cv_rgb_image != None:
+			img = np.asarray(robot.current_cv_rgb_image)
+			height, width, depth = img.shape
 			p1 = ( width / 2 - robot.current_w_corr_win / 2 , height / 2 - robot.h_corr_win / 2 )
 			p2 = ( width / 2 + robot.current_w_corr_win / 2 , height / 2 + robot.h_corr_win / 2 )
 			cv2.rectangle(img, p1, p2 , (0,0,255))
-			cv2.imshow("Image", np.asarray(img))
+			cv2.imshow("Image", img)
 
 		if k == 27:
 			cv2.destroyAllWindows()
@@ -71,7 +72,7 @@ if __name__=="__main__":
 
 	while True:
 		robot.play_sound(6)
-		observation = robot.get_observation()
+		observation = max(robot.get_observation(),0)
 		mapper.add_observation(observation)
 
 		action = mapper.plan_action()
@@ -84,6 +85,12 @@ if __name__=="__main__":
 		if type(action) == type(1):
 			mapper.apply_action(action)
 			robot.apply_action(action,observation)
+
+
+			if robot.get_observation() <= 0:
+					robot.apply_action(Action.recognize,0)
+				#pickle.dump(robot.pickles, open('pickles.p', 'wb'))
+
 		else:
 			break
 
