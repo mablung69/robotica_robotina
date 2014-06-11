@@ -14,6 +14,8 @@ class FutbolPlanner(object):
 		self.path 			 = None
 
 		self.visited.add(start)
+		self.target = self.bfs_search()
+
 
 	def apply_action(self, action):
 		if action == Action.move:
@@ -68,30 +70,39 @@ class FutbolPlanner(object):
 
 
 	def bfs_search(self, stop_list=[]):
+
+		local_visit = set()
+		print "VISITED: ",self.visited
 		stack = [self.actual_position]
 		while len(stack) > 0:
 			node = stack.pop()
 			if not node in self.visited:
 				self.target = node
+				print "FROM: ",self.actual_position," TO: ",self.target
 				return node
 
+			local_visit.add(node)
+
 			for s in self.graph.edges[node]:
-				if not s in stop_list:
+
+				if not s in stop_list and not s in local_visit:
+					print "CHECKING: ",s
 					stack.append(s)
 
 		return False
 
-	def get_action(self):
+	def plan_action(self):
 		planner = Planner()
 		planner.graph = self.graph
-		path = planner.solve(self.location, self.goal)
+		print "SANTIAGO TARGET: ",self.target
+		path = planner.solve(self.actual_position, [self.target])
 		self.current_plan = path
 
 		if len(path) <= 1:
 			return False
 		else:
 			next_state = path[1]
-			turn = next_state[2] - self.location[2]
+			turn = next_state[2] - self.actual_position[2]
 			if turn == 0:
 				return Action.move
 			elif turn==-1:  
@@ -102,3 +113,61 @@ class FutbolPlanner(object):
 				return Action.turn_right
 			elif turn == -3:
 				return Action.turn_left
+
+if __name__=="__main__":
+
+	import multiprocessing
+	from localization import Localization
+	from planner import Planner
+	from mapper import Mapper
+	from file_loader import FileLoader
+	from enums import Action
+	import properties
+	import time
+
+	pool = multiprocessing.Pool(processes=1)
+
+	filename = properties.file_name
+
+	f_loader = FileLoader()
+	f_loader.read_map(filename)
+	f_loader.generate_undirected_graph()
+	f_loader.generate_directed_graph()
+	#f_loader.estimate_distances()
+
+	location = f_loader.starts[0]
+	goals    = f_loader.goals
+	max_col  = f_loader.max_cols
+	max_row  = f_loader.max_rows
+	graph    = f_loader.directed_graph
+
+	#thread.start_new_thread( show_image, ("Thread-1",robot, ) )
+	
+	futbol_planner   = FutbolPlanner(graph,location)
+	futbol_planner.graph.push_map(futbol_planner.actual_position)
+
+	while True:
+		#observation = max(robot.get_observation(),0)
+		#mapper.add_observation(observation)
+
+		action = futbol_planner.plan_action()
+
+		futbol_planner.graph.push_map(futbol_planner.actual_position)
+
+		if type(action) == type(1):
+			futbol_planner.apply_action(action)
+		else:
+			break
+
+		if futbol_planner.actual_position == (0,0,0):
+			pass
+
+		if len(futbol_planner.player_position) > 3:
+			futbol_planner.graph.push_map(futbol_planner.actual_position)
+			break
+
+		if futbol_planner.target == False:
+			break
+
+		time.sleep(1)
+

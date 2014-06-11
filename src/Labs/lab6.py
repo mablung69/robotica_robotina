@@ -13,6 +13,7 @@ import pickle
 from ..localization import Localization
 from ..planner import Planner
 from ..mapper import Mapper
+from ..futbol_planner import FutbolPlanner
 from ..file_loader import FileLoader
 
 #import Enums
@@ -58,6 +59,7 @@ if __name__=="__main__":
 	f_loader = FileLoader()
 	f_loader.read_map(filename)
 	#f_loader.generate_undirected_graph()
+	f_loader.generate_directed_graph()
 	#f_loader.estimate_distances()
 
 	location = f_loader.starts[0]
@@ -67,20 +69,18 @@ if __name__=="__main__":
 
 	#thread.start_new_thread( show_image, ("Thread-1",robot, ) )
 	
-	mapper   = Mapper(max_col,max_row,location,goals)
+	futbol_planner   = FutbolPlanner(max_col,max_row,location,goals)
 	mapper.init_map()
 
 	while True:
 		robot.play_sound(6)
-		observation = max(robot.get_observation(),0)
-		mapper.add_observation(observation)
+		#observation = max(robot.get_observation(),0)
+		#mapper.add_observation(observation)
 
 		action = mapper.plan_action()
 
 		#mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)	
 		pool.apply_async( push, [mapper,mapper.location,mapper.current_plan],callback=None )
-		#push(mapper,mapper.location,mapper.current_plan)
-		#sleep(1)
 
 		if type(action) == type(1):
 			mapper.apply_action(action)
