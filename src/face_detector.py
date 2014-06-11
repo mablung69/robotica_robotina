@@ -1,5 +1,6 @@
 import numpy as numpy
 import cv2
+import pickle
 
 class FaceDetector(object):
 	def __init__(self):
@@ -15,3 +16,11 @@ class FaceDetector(object):
 			detections.append(roi_gray)
 
 		return detections
+
+if __name__ == '__main__':
+	face_detector = FaceDetector()
+	images = pickle.load(open('pickles.p', 'r'))
+	
+	for img in images:
+		cv2.imshow('Image', img)
+		cv2.waitKey(1)
