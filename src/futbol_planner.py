@@ -3,13 +3,16 @@ from graph import DirectedGraph
 from astar import shortest_path
 from planner import Planner
 
+import Queue
+
 class FutbolPlanner(object):
-	def __init__(self, graph, start):
+	def __init__(self, graph, start, node_distance):
 		self.player_position = {}
 		self.graph 			 = graph
 		self.visited 		 = set()
 		self.sign_position 	 = {}
 		self.actual_position = start
+		self.node_distance 	 = node_distance
 		self.target 		 = None
 		self.path 			 = None
 
@@ -73,10 +76,11 @@ class FutbolPlanner(object):
 
 		local_visit = set()
 		print "VISITED: ",self.visited
-		stack = [self.actual_position]
-		while len(stack) > 0:
-			node = stack.pop()
-			if not node in self.visited:
+		queue = Queue.Queue()
+		queue.put(self.actual_position)
+		while not queue.empty():
+			node = queue.get()
+			if not node in self.visited and self.node_distance[node] == 0:
 				self.target = node
 				print "FROM: ",self.actual_position," TO: ",self.target
 				return node
@@ -87,7 +91,7 @@ class FutbolPlanner(object):
 
 				if not s in stop_list and not s in local_visit:
 					print "CHECKING: ",s
-					stack.append(s)
+					queue.put(s)
 
 		return False
 
@@ -133,17 +137,18 @@ if __name__=="__main__":
 	f_loader.read_map(filename)
 	f_loader.generate_undirected_graph()
 	f_loader.generate_directed_graph()
-	#f_loader.estimate_distances()
+	f_loader.estimate_distances()
 
-	location = f_loader.starts[0]
-	goals    = f_loader.goals
-	max_col  = f_loader.max_cols
-	max_row  = f_loader.max_rows
-	graph    = f_loader.directed_graph
+	location 		= f_loader.starts[0]
+	goals    		= f_loader.goals
+	max_col  		= f_loader.max_cols
+	max_row  		= f_loader.max_rows
+	graph    		= f_loader.directed_graph
+	node_distance 	= f_loader.node_distance
 
 	#thread.start_new_thread( show_image, ("Thread-1",robot, ) )
 	
-	futbol_planner   = FutbolPlanner(graph,location)
+	futbol_planner   = FutbolPlanner(graph, location, node_distance)
 	futbol_planner.graph.push_map(futbol_planner.actual_position)
 
 	while True:
