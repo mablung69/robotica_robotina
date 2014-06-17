@@ -18,6 +18,7 @@ from sensor_msgs.msg import Image
 from tf import transformations as trans
 from RobotinaImage import RobotinaImage
 from ..enums import Action
+from ..sound_player import SoundPlayer
 
 import time
 
@@ -137,19 +138,25 @@ class Turtlebot(object):
         fc = FaceDetector()
 
         detections = fc.detect(cv_image)
-
+        best_detection = None
+        best_confidence = 10000000000
         for y1,y2,x1,x2 in detections:
             face = cv_image[y1:y2, x1:x2, :]
             face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
             face = cv2.resize(face, (112,92))
             [p_label, p_confidence] = self.model.predict(face)
-            
+            if best_confidence > p_confidence:
+                best_detection = p_label
             cv2.rectangle(cv_image, (x1,y1), (x2,y2), (0,255,0), 2)
             player = fc.to_string(p_label)
             cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 4,(0,255,0))
             self.cv_image = cv_image
             #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
-            print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence) 
+            print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence)
+
+        if best_detection != None:
+                s = SoundPlayer()
+                s.play_sound(best_detection)
 
         if len(detections) == 0:
             print "NO HAY CARA !"

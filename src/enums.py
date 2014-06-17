@@ -24,9 +24,9 @@ class Player(object):
 
 class Sounds(object):
 	SOUND_PATH="src/sonidos_chile/"
-	eduardo = SOUND_PATH + "vargas_01.wav"
+	eduardo = SOUND_PATH + "vargas.wav"
 	alexis 	= SOUND_PATH + "sanchez_02.wav"
-	claudio = SOUND_PATH + "bravo_03.wav"
+	claudio = SOUND_PATH + "bravo_02.wav"
 	arturo	= SOUND_PATH + "vidal_01.wav"
 
 	

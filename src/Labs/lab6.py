@@ -74,6 +74,9 @@ if __name__=="__main__":
 	futbol_planner   = FutbolPlanner(graph, location, node_distance)
 	futbol_planner.graph.push_map(futbol_planner.actual_position)
 
+	if robot.get_observation() <= 0:
+		robot.apply_action(Action.recognize,0)
+
 	while True:
 		robot.play_sound(6)
 		observation = max(robot.get_observation(),0)
