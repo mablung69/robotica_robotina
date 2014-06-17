@@ -601,7 +601,7 @@ class Turtlebot(object):
 
         self.align_wall(0.1)
 
-        if obs_init <= 4:
+        if obs_init <= 2:
             self.correct_short_angle()
 
         self.align_wall(0.1)
@@ -638,7 +638,7 @@ class Turtlebot(object):
         self.align_wall(lin_velocity)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-        if obs_init <= 4:
+        if obs_init <= 2:
             self.correct_short_angle()
 
         self.align_wall(lin_velocity)
