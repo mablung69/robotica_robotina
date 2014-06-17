@@ -6,10 +6,13 @@ from enums import Player
 class SoundPlayer(object):
 
     def __init__(self):
-        pygame.mixer.pre_init(44100, -16, 2, 2048) # setup mixer to avoid sound lag
         pygame.init()                              #initialize pygame
+        pygame.mixer.init()
 
         self.sounds = {}
+
+        if not os.path.isfile(Sounds.eduardo):
+            print "No file for eduardo"
 
         self.sounds[Player.eduardo] = pygame.mixer.Sound(os.path.join('data',Sounds.eduardo))
         self.sounds[Player.alexis] = pygame.mixer.Sound(os.path.join('data',Sounds.alexis))
@@ -19,3 +22,8 @@ class SoundPlayer(object):
     def play_sound(self,player):
         if player in self.sounds.keys():
             self.sounds[player].play()
+
+if __name__=="__main__":
+
+    s = SoundPlayer()
+    s.play_sound(Player.alexis)
