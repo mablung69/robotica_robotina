@@ -14,10 +14,10 @@ class SoundPlayer(object):
         if not os.path.isfile(Sounds.eduardo):
             print "No file for eduardo"
 
-        self.sounds[Player.eduardo] = pygame.mixer.Sound(os.path.join('data',Sounds.eduardo))
-        self.sounds[Player.alexis] = pygame.mixer.Sound(os.path.join('data',Sounds.alexis))
-        self.sounds[Player.claudio] = pygame.mixer.Sound(os.path.join('data',Sounds.claudio))
-        self.sounds[Player.arturo] = pygame.mixer.Sound(os.path.join('data',Sounds.arturo))
+        self.sounds[Player.eduardo] = pygame.mixer.Sound(Sounds.eduardo)
+        self.sounds[Player.alexis] = pygame.mixer.Sound(Sounds.alexis)
+        self.sounds[Player.claudio] = pygame.mixer.Sound(Sounds.claudio)
+        self.sounds[Player.arturo] = pygame.mixer.Sound(Sounds.arturo)
     
     def play_sound(self,player):
         if player in self.sounds.keys():

@@ -43,10 +43,12 @@ class Turtlebot(object):
     speed_const = max_linear / deltaD
     v0 = speed_const * d2
     
-    path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
-    model=cv2.createEigenFaceRecognizer()
 
     def __init__(self):
+
+        path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
+        self.model=cv2.createEigenFaceRecognizer()
+        self.model.load(path)
 
         rospy.init_node('pyturtlebot', anonymous=True)
         rospy.myargv(argv=sys.argv)
@@ -79,6 +81,7 @@ class Turtlebot(object):
         self.current_depth_msg = None
         self.current_max_depth=None
         self.current_rgb_image = None
+        self.cv_image = None
 
         self.current_img_track = []
         self.current_depth_track = []
@@ -131,16 +134,16 @@ class Turtlebot(object):
 
         cv_image = np.asarray(self.current_cv_rgb_image)
 
-
-        time.sleep(0.5)
-
         fc = FaceDetector()
 
         detections = fc.detect(cv_image)
 
         for y1,y2,x1,x2 in detections:
-            face = cv_image[y1:y2, x1:x2]
-            [p_label, p_confidence] = model.predict(face)
+            face = cv_image[y1:y2, x1:x2, :]
+            face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+            face = cv2.resize(face, (112,92))
+            [p_label, p_confidence] = self.model.predict(face)
+            
             cv2.rectangle(cv_image, (y1,x1), (y2,x2), (0,255,0), 2)
             player = fc.to_string(p_label)
             cv2.putText(cv_image,player,(y1,x1), cv2.FONT_HERSHEY_PLAIN, 1,(0,255,0))

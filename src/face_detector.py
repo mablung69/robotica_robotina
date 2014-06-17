@@ -3,7 +3,7 @@ import cv2
 
 class FaceDetector(object):
 	def __init__(self):
-		self.face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+		self.face_cascade = cv2.CascadeClassifier('src/haarcascade_frontalface_default.xml')
 
 	def detect(self, img):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
