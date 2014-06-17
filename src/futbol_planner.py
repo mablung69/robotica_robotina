@@ -48,6 +48,8 @@ class FutbolPlanner(object):
 		self.sign_position.setdefault(sign, [])
 		self.sign_position[sign].append(self.actual_position)
 
+		print 'Adding sign: ', self.actual_position, ' - ', sign
+
 		if sign in [Sign.dont_turn_left, Sign.dont_turn_right]:
 			from_node = self.actual_position
 			if sign == Sign.dont_turn_left:
@@ -66,23 +68,34 @@ class FutbolPlanner(object):
 			self.graph.disconect(from_node, to_node)
 
 		if sign in [Sign.turn_left, Sign.turn_right]:
-			stop_list = [self.actual_position]
+			stop_list = []
+			for i in xrange(0,4):
+				stop_list.append((self.actual_position[0],self.actual_position[1],(self.actual_position[2]+i)%4))
+			if sign == Sign.turn_left:
+				stop_list.remove((self.actual_position[0],self.actual_position[1],(self.actual_position[2]+1)%4))
+			elif sign == Sign.turn_right:
+				stop_list.remove((self.actual_position[0],self.actual_position[1],(self.actual_position[2]-1)%4))
+			
 			target = self.bfs_search(stop_list=stop_list)
 			if target != False:
 				self.target = target
+			else:
+				target = self.bfs_search()
+				if target != False:
+					self.target = target
 
 
 	def bfs_search(self, stop_list=[]):
 
 		local_visit = set()
-		print "VISITED: ",self.visited
+		#print "VISITED: ",self.visited
 		queue = Queue.Queue()
 		queue.put(self.actual_position)
 		while not queue.empty():
 			node = queue.get()
 			if not node in self.visited and self.node_distance[node] == 0:
 				self.target = node
-				print "FROM: ",self.actual_position," TO: ",self.target
+				#print "FROM: ",self.actual_position," TO: ",self.target
 				return node
 
 			local_visit.add(node)
@@ -90,7 +103,7 @@ class FutbolPlanner(object):
 			for s in self.graph.edges[node]:
 
 				if not s in stop_list and not s in local_visit:
-					print "CHECKING: ",s
+					#print "CHECKING: ",s
 					queue.put(s)
 
 		return False
@@ -98,7 +111,7 @@ class FutbolPlanner(object):
 	def plan_action(self):
 		planner = Planner()
 		planner.graph = self.graph
-		print "SANTIAGO TARGET: ",self.target
+		#print "SANTIAGO TARGET: ",self.target
 		path = planner.solve(self.actual_position, [self.target])
 		self.current_plan = path
 
@@ -125,7 +138,7 @@ if __name__=="__main__":
 	from planner import Planner
 	from mapper import Mapper
 	from file_loader import FileLoader
-	from enums import Action
+	from enums import Action, Sign
 	import properties
 	import time
 
@@ -146,15 +159,17 @@ if __name__=="__main__":
 	graph    		= f_loader.directed_graph
 	node_distance 	= f_loader.node_distance
 
+	signals = {}
+	signals[(1,0,1)] = Sign.dont_turn_right
+	signals[(4,1,0)] = Sign.turn_right
+
 	#thread.start_new_thread( show_image, ("Thread-1",robot, ) )
 	
 	futbol_planner   = FutbolPlanner(graph, location, node_distance)
 	futbol_planner.graph.push_map(futbol_planner.actual_position)
 
 	while True:
-		#observation = max(robot.get_observation(),0)
-		#mapper.add_observation(observation)
-
+		print 'Iteration: ', futbol_planner.actual_position
 		action = futbol_planner.plan_action()
 
 		futbol_planner.graph.push_map(futbol_planner.actual_position)
@@ -173,6 +188,9 @@ if __name__=="__main__":
 
 		if futbol_planner.target == False:
 			break
+
+		if futbol_planner.actual_position in signals.keys():
+			futbol_planner.add_sign(signals[futbol_planner.actual_position])
 
 		time.sleep(1)
 

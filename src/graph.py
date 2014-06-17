@@ -16,6 +16,7 @@ class DirectedGraph(object):
         self._add_edge(from_node, to_node, distance)
 
     def disconect(self, from_node, to_node):
+        print '\t>>DirectedGraph::Disconecting edge: ', from_node, ' - ', to_node
         if to_node in self.edges[from_node]:
             self.edges[from_node].remove(to_node)
  
