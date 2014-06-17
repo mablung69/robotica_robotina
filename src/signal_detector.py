@@ -10,22 +10,22 @@ class SignalDetector(object):
 		self.template = {}
 		self.hog_features = {}
 		
-		I = cv2.imread('Templates/turn_left.jpg')
+		I = cv2.imread('../Templates/turn_left.jpg')
 		self.hog_features[Sign.turn_left] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_left] = I
 
-		I = cv2.imread('Templates/turn_right.jpg')
+		I = cv2.imread('../Templates/turn_right.jpg')
 		self.hog_features[Sign.turn_right] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_right] = I
 
-		I = cv2.imread('Templates/dont_turn_left.jpg')
+		I = cv2.imread('../Templates/dont_turn_left.jpg')
 		self.hog_features[Sign.dont_turn_left] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_left] = I
 
-		I = cv2.imread('Templates/dont_turn_right.jpg')
+		I = cv2.imread('../Templates/dont_turn_right.jpg')
 		self.hog_features[Sign.dont_turn_right] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_right] = I
@@ -36,7 +36,8 @@ class SignalDetector(object):
 			
 
 	def template_detect(self, img, test=False):
-		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		gray = img[:,:,0]
 		#_, gray = cv2.threshold(gray,127,255,cv2.THRESH_BINARY)
 		score 		= 0
 		result		= None
@@ -129,6 +130,7 @@ if __name__ == '__main__':
 					#cv2.imshow('Signal', s)
 					#print '\nTemplate prediction: ', signal_detector.template_detect(s)
 					i = img[t[1]:b[1], t[0]:b[0]]
+					#i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
 					cv2.imshow('Signal', i)
 					k = cv2.waitKey(0)
 					print signal_detector.knn_predict(i)
