@@ -165,13 +165,13 @@ if __name__=="__main__":
 	#thread.start_new_thread( show_image, ("Thread-1",robot, ) )
 	
 	futbol_planner   = FutbolPlanner(graph, location, node_distance)
-	futbol_planner.graph.push_map(futbol_planner.actual_position)
+	futbol_planner.graph.push_map(futbol_planner.actual_position,signals=futbol_planner.sign_position)
 
 	while True:
 		print 'Iteration: ', futbol_planner.actual_position
 		action = futbol_planner.plan_action()
 
-		futbol_planner.graph.push_map(futbol_planner.actual_position)
+		futbol_planner.graph.push_map(futbol_planner.actual_position,signals=futbol_planner.sign_position)
 
 		if type(action) == type(1):
 			futbol_planner.apply_action(action)
@@ -182,7 +182,7 @@ if __name__=="__main__":
 			pass
 
 		if len(futbol_planner.player_position) > 3:
-			futbol_planner.graph.push_map(futbol_planner.actual_position)
+			futbol_planner.graph.push_map(futbol_planner.actual_position,signals=futbol_planner.sign_position)
 			break
 
 		if futbol_planner.target == False:
