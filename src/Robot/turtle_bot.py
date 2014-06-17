@@ -151,6 +151,7 @@ class Turtlebot(object):
         best_confidence = 800
         for y1,y2,x1,x2 in detections:
             face = cv_image[y1:y2, x1:x2, :]
+            cv_image = face
             face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
             face = cv2.resize(face, (112,92))
             [p_label, p_confidence] = self.model.predict(face)
@@ -159,7 +160,7 @@ class Turtlebot(object):
             cv2.rectangle(cv_image, (x1,y1), (x2,y2), (0,255,0), 2)
             player = fc.to_string(p_label)
             cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
-            cv_image = face
+            
             
             #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
             print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence)
