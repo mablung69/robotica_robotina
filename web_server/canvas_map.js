@@ -20,13 +20,20 @@ $(function () {
     });
 
     //Polling mode
-    /*setInterval(function(){
+    console.log("PollingMode");
+    setInterval(function(){
         $.get( "/test.json", function( data ) {
             graph =  data ;
             console.log(graph);
             drawGraph(graph);
         });
-    }, 500);*/
+    }, 500000);
+
+    $.get( "/test.json", function( data ) {
+            graph =  data ;
+            console.log(graph);
+            drawGraph(graph);
+        });
 
     function drawGraph(graph)
     {
@@ -60,7 +67,10 @@ $(function () {
 
         drawPlan(graph.plan,graph.size[0],cell_size,margin);
 
+        drawImages(graph.signals,cell_size,margin);
+
         drawRobot(graph.size[0] - graph.location[0] - 1,graph.location[1],graph.location[2],cell_size,margin);
+        
     }
 
     function drawCell(row,col,walls,cell_size,margin )
@@ -165,6 +175,59 @@ $(function () {
             centerLastX = centerNextX;
             centerLastY = centerNextY;
         }
+    }
+
+    function drawImages(signals,cell_size,margin)
+    {
+        for (var img in signals){
+
+            if (signals.hasOwnProperty(img)) {
+                var node = img;
+                var str_img = signals[img];
+
+                node = node.replace(/\(/g,'');
+                node = node.replace(/\)/g,'');
+                node = node.replace(/\ /g,'');
+                node = node.split(",");
+                
+                node[0] = graph.size[0] - parseInt(node[0],10) - 1;
+                node[1] = parseInt(node[1],10);
+                node[2] = parseInt(node[2],10);
+                
+                drawImage(str_img,node[0],node[1],node[2],cell_size,margin);
+
+            }
+
+            
+        }
+        
+    }
+
+    function drawImage(image,row,col,ori,cell_size,margin)
+    {
+        img_name = 'turn_right.jpg';
+        if(image == "tr")
+            img_name = 'turn_right.jpg';
+        if(image == "tl")
+            img_name = 'turn_left.jpg';
+        if(image == "dtr")
+            img_name = 'dont_turn_right.jpg';
+        if(image == "dtl")
+            img_name = 'dont_turn_left.jpg';
+
+        var imgX = margin + (cell_size * (col) );
+        var imgY = margin + (cell_size * (row) );
+
+        var imageObj = new Image();
+        imageObj.onload = function() {
+            context.translate(imgX+ cell_size / 2, imgY+ cell_size / 2);
+            context.rotate( Math.PI / 2 * ori);
+            context.drawImage(imageObj, 0-cell_size/2+margin*2, 0-cell_size/2+margin*2,cell_size-4*margin,cell_size-4*margin);
+            context.setTransform(1, 0, 0, 1, 0, 0);
+        };
+        imageObj.src = img_name;
+
+        
     }
 
 });
