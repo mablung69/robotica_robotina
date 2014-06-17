@@ -10,22 +10,22 @@ class SignalDetector(object):
 		self.template = {}
 		self.hog_features = {}
 		
-		I = cv2.imread('../Templates/turn_left.jpg')
+		I = cv2.imread('Templates/turn_left.jpg')
 		self.hog_features[Sign.turn_left] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_left] = I
 
-		I = cv2.imread('../Templates/turn_right.jpg')
+		I = cv2.imread('Templates/turn_right.jpg')
 		self.hog_features[Sign.turn_right] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_right] = I
 
-		I = cv2.imread('../Templates/dont_turn_left.jpg')
+		I = cv2.imread('Templates/dont_turn_left.jpg')
 		self.hog_features[Sign.dont_turn_left] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_left] = I
 
-		I = cv2.imread('../Templates/dont_turn_right.jpg')
+		I = cv2.imread('Templates/dont_turn_right.jpg')
 		self.hog_features[Sign.dont_turn_right] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_right] = I
@@ -36,8 +36,8 @@ class SignalDetector(object):
 			
 
 	def template_detect(self, img, test=False):
-		#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-		gray = img[:,:,0]
+		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		
 		#_, gray = cv2.threshold(gray,127,255,cv2.THRESH_BINARY)
 		score 		= 0
 		result		= None
@@ -66,7 +66,8 @@ class SignalDetector(object):
 		return result, score
 
 	def circle_detect(self, img, test=True):
-		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		gray = img[:,:,2]
+		#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		gray = cv2.medianBlur(gray,9)
 		circles = cv2.HoughCircles(gray,cv2.cv.CV_HOUGH_GRADIENT,1,20,
                             param1=200,param2=100,minRadius=10,maxRadius=0)
@@ -89,8 +90,8 @@ class SignalDetector(object):
 
 	def compute_hog(self, img):
 		feature = []
-		img  = cv2.resize(img, (170,170))
-		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		gray  = cv2.resize(gray, (170,170))
 		h, w = gray.shape
 
 

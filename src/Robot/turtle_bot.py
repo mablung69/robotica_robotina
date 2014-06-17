@@ -20,7 +20,7 @@ from RobotinaImage import RobotinaImage
 from ..enums import Action
 from ..enums import Player
 from ..sound_player import SoundPlayer
-
+import pickle
 import time
 
 _turtlebot_singleton = None
@@ -84,6 +84,7 @@ class Turtlebot(object):
         self.speed_const = 0.7 / 1.4
 
         self.movement_enabled = True
+        self.iterator = 0
         self.current_laser_msg = None
         
         self.current_cv_image = None
@@ -151,7 +152,7 @@ class Turtlebot(object):
         best_confidence = 800
         for y1,y2,x1,x2 in detections:
             face = cv_image[y1:y2, x1:x2, :]
-            cv_image = face
+            #cv_image = face
             face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
             face = cv2.resize(face, (112,92))
             [p_label, p_confidence] = self.model.predict(face)
@@ -170,16 +171,21 @@ class Turtlebot(object):
                 s = SoundPlayer()
                 s.play_sound(best_detection)
 
-        if len(detections) == 0:
-            print "NO HAY CARA !"
-
         signals = self.signal_detector.circle_detect(cv_image)
         for top, bottom in signals:
-            cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
             s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
             sign_prediction, score = self.signal_detector.knn_predict(s)
+            cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
+            
+            
 
         self.cv_image = cv_image
+
+        output = open('pickle'+str(self.iterator)+'.pkl', 'wb')
+        self.iterator +=1.
+        pickle.dump(cv_image, output)
+        output.close()
+
         #respuesta del request
         #return [p_label,p_confidence]
         if sign_prediction != None:
