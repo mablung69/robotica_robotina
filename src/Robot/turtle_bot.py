@@ -51,7 +51,7 @@ class Turtlebot(object):
         self.model=cv2.createEigenFaceRecognizer()
         self.model.load(path)
 
-        selg.signal_detector = SignalDetector()
+        self.signal_detector = SignalDetector()
 
         rospy.init_node('pyturtlebot', anonymous=True)
         rospy.myargv(argv=sys.argv)
@@ -85,6 +85,7 @@ class Turtlebot(object):
         self.current_max_depth=None
         self.current_rgb_image = None
         self.cv_image = None
+        self.last_signal = None
 
         self.current_img_track = []
         self.current_depth_track = []
@@ -134,7 +135,7 @@ class Turtlebot(object):
         print "ENTRE A RECOGNIZE"
 
         #cv_image = CvBridge().imgmsg_to_cv2(self.current_rgb_image, self.current_rgb_image.encoding)
-
+        sign_prediction = None
         cv_image = np.asarray(self.current_cv_rgb_image)
         fc = FaceDetector()
         detections = fc.detect(cv_image)
@@ -154,13 +155,19 @@ class Turtlebot(object):
         if len(detections) == 0:
             print "NO HAY CARA !"
 
-        signals = selg.signal_detector.circle_detect(cv_image)
+        signals = self.signal_detector.circle_detect(cv_image)
         for top, bottom in signals:
             cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
+            s = cv_image[top[0]:bottom[0], top[1]:bottom[1]]
+            sign_prediction, score = self.signal_detector.knn_predict(s)
 
         self.cv_image = cv_image
         #respuesta del request
         #return [p_label,p_confidence]
+        if sign_prediction != None:
+            print 'Signal Score: ', score
+            print 'Signal Id: ', sign_prediction
+            self.last_signal = sign_prediction
 
     def move(self, linear=0.0, angular=0.0):
         """Moves the robot at a given linear speed and angular velocity

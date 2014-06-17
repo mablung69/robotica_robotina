@@ -73,14 +73,14 @@ if __name__=="__main__":
 	
 	futbol_planner   = FutbolPlanner(graph, location, node_distance)
 	futbol_planner.graph.push_map(futbol_planner.actual_position)
+	action = futbol_planner.plan_action()
 
 	while True:
 		robot.play_sound(6)
 		observation = max(robot.get_observation(),0)
 		#mapper.add_observation(observation)
 
-		action = futbol_planner.plan_action()
-
+		
 		#mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)	
 		pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[]],callback=None )
 
@@ -90,7 +90,13 @@ if __name__=="__main__":
 
 
 			if robot.get_observation() <= 0:
-					robot.apply_action(Action.recognize,0)
+				robot.apply_action(Action.recognize,0)
+			
+			if robot.last_signal != None:
+				futbol_planner.add_sign(robot.last_signal)
+				robot.last_signal = None
+
+			action = futbol_planner.plan_action()
 
 		else:
 			break
