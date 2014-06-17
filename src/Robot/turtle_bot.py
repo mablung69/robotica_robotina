@@ -25,6 +25,7 @@ import time
 _turtlebot_singleton = None
 
 from ..face_detector import FaceDetector
+from ..signal_detector import SignalDetector
 
 
 def get_robot():
@@ -50,6 +51,8 @@ class Turtlebot(object):
         path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
         self.model=cv2.createEigenFaceRecognizer()
         self.model.load(path)
+
+        selg.signal_detector = SignalDetector()
 
         rospy.init_node('pyturtlebot', anonymous=True)
         rospy.myargv(argv=sys.argv)
@@ -134,12 +137,10 @@ class Turtlebot(object):
         #cv_image = CvBridge().imgmsg_to_cv2(self.current_rgb_image, self.current_rgb_image.encoding)
 
         cv_image = np.asarray(self.current_cv_rgb_image)
-
         fc = FaceDetector()
-
         detections = fc.detect(cv_image)
         best_detection = None
-        best_confidence = 10000000000
+        best_confidence = 800
         for y1,y2,x1,x2 in detections:
             face = cv_image[y1:y2, x1:x2, :]
             face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
@@ -149,8 +150,8 @@ class Turtlebot(object):
                 best_detection = p_label
             cv2.rectangle(cv_image, (x1,y1), (x2,y2), (0,255,0), 2)
             player = fc.to_string(p_label)
-            cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 4,(0,255,0))
-            self.cv_image = cv_image
+            cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+            
             #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
             print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence)
 
@@ -161,6 +162,11 @@ class Turtlebot(object):
         if len(detections) == 0:
             print "NO HAY CARA !"
 
+        signals = selg.signal_detector.circle_detect(cv_image)
+        for top, bottom in signals:
+            cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
+
+        self.cv_image = cv_image
         #respuesta del request
         #return [p_label,p_confidence]
 
