@@ -3,7 +3,7 @@ import cv2
 
 class FaceDetector(object):
 	def __init__(self):
-		self.face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+		self.face_cascade = cv2.CascadeClassifier('src/haarcascade_frontalface_default.xml')
 
 	def detect(self, img):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -12,13 +12,14 @@ class FaceDetector(object):
 		max_h, max_w = gray.shape
 		detections = []
 		for (x,y,w,h) in faces:
-			y1 = max(0, y-delta)
+			y1 = max(0, y-30)
 			y2 = min(y+delta+h, max_h)
 			x1 = max(0, x-delta)
 			x2 = min(x+delta+w, max_w)
 			roi_gray = gray[y1:y2, x1:x2]
 			roi_gray = cv2.resize(roi_gray, (112,92))
-			detections.append(roi_gray)
+			#detections.append(roi_gray)
+			detections.append((y1,y2,x1,x2))
 
 		return detections
 
@@ -29,7 +30,7 @@ class FaceDetector(object):
 			return 'Alexis Sanchez'
 		if player == 2:
 			return 'Claudio Bravo'
-		if plyer == 3:
+		if player == 3:
 			return 'Arturo Vidal'
 
 if __name__ == '__main__':

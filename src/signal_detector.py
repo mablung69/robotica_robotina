@@ -10,22 +10,22 @@ class SignalDetector(object):
 		self.template = {}
 		self.hog_features = {}
 		
-		I = cv2.imread('../Templates/turn_left.jpg')
+		I = cv2.imread('Templates/turn_left.jpg')
 		self.hog_features[Sign.turn_left] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_left] = I
 
-		I = cv2.imread('../Templates/turn_right.jpg')
+		I = cv2.imread('Templates/turn_right.jpg')
 		self.hog_features[Sign.turn_right] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_right] = I
 
-		I = cv2.imread('../Templates/dont_turn_left.jpg')
+		I = cv2.imread('Templates/dont_turn_left.jpg')
 		self.hog_features[Sign.dont_turn_left] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_left] = I
 
-		I = cv2.imread('../Templates/dont_turn_right.jpg')
+		I = cv2.imread('Templates/dont_turn_right.jpg')
 		self.hog_features[Sign.dont_turn_right] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_right] = I
@@ -35,7 +35,7 @@ class SignalDetector(object):
 
 			
 
-	def template_detect(self, img, test=True):
+	def template_detect(self, img, test=False):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		#_, gray = cv2.threshold(gray,127,255,cv2.THRESH_BINARY)
 		score 		= 0
@@ -65,19 +65,20 @@ class SignalDetector(object):
 		return result, score
 
 	def circle_detect(self, img, test=True):
-		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		gray = img[:,:,1]
+		#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		gray = cv2.medianBlur(gray,9)
-		circles = cv2.HoughCircles(gray,cv2.cv.CV_HOUGH_GRADIENT,1,20,
-                            param1=200,param2=100,minRadius=10,maxRadius=0)
+		circles = cv2.HoughCircles(gray,cv2.cv.CV_HOUGH_GRADIENT,1,100,
+                            param1=50,param2=50,minRadius=20,maxRadius=0)
 		signals = []
 
 		
 		if circles != None:
 			for i in circles[0,:]:
-				delta = 5
+				delta = 10
 				top = (int(i[0]-i[2]-delta),int(i[1]-i[2]-delta))
 				bottom = (int(i[0]+i[2]+delta),int(i[1]+i[2]+delta))
-				signals.append(img[top[1]:bottom[1],top[0]:bottom[0]])
+				signals.append((top, bottom))
 				#print 'Top: ', top
 				#print 'Bottom: ', bottom
 				if test:
@@ -88,8 +89,8 @@ class SignalDetector(object):
 
 	def compute_hog(self, img):
 		feature = []
-		img  = cv2.resize(img, (170,170))
-		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		gray  = cv2.resize(gray, (170,170))
 		h, w = gray.shape
 
 
@@ -125,11 +126,16 @@ if __name__ == '__main__':
 		if img.any():
 			signals = signal_detector.circle_detect(img)
 			if len(signals) > 0:
-				for s in signals:
+				for t, b in signals:
 					#cv2.imshow('Signal', s)
-					print '\nTemplate prediction: ', signal_detector.template_detect(s)
-					print 'HOG prediction: ', signal_detector.knn_predict(s)
-				k = cv2.waitKey(0)
+					#print '\nTemplate prediction: ', signal_detector.template_detect(s)
+					i = img[t[1]:b[1], t[0]:b[0]]
+					i2 = img[t[1]:b[1], t[0]:b[0], 1]
+					#i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+					cv2.imshow('Signal', i2)
+					k = cv2.waitKey(0)
+					print signal_detector.knn_predict(i)
+				
 				if k==27:
 					break
 			

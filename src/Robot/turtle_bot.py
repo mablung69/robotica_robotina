@@ -18,13 +18,15 @@ from sensor_msgs.msg import Image
 from tf import transformations as trans
 from RobotinaImage import RobotinaImage
 from ..enums import Action
-
+from ..enums import Player
+from ..sound_player import SoundPlayer
+import pickle
 import time
 
 _turtlebot_singleton = None
 
-import pickle
 from ..face_detector import FaceDetector
+from ..signal_detector import SignalDetector
 
 
 def get_robot():
@@ -44,10 +46,20 @@ class Turtlebot(object):
     speed_const = max_linear / deltaD
     v0 = speed_const * d2
     
-    path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
-    model=cv2.createEigenFaceRecognizer()
 
     def __init__(self):
+
+        self.found_players = {}
+        self.found_players[Player.eduardo] = 0
+        self.found_players[Player.claudio] = 0
+        self.found_players[Player.alexis] = 0
+        self.found_players[Player.arturo] = 0
+
+        path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
+        self.model=cv2.createEigenFaceRecognizer()
+        self.model.load(path)
+
+        self.signal_detector = SignalDetector()
 
         rospy.init_node('pyturtlebot', anonymous=True)
         rospy.myargv(argv=sys.argv)
@@ -72,6 +84,7 @@ class Turtlebot(object):
         self.speed_const = 0.7 / 1.4
 
         self.movement_enabled = True
+        self.iterator = 0
         self.current_laser_msg = None
         
         self.current_cv_image = None
@@ -80,6 +93,8 @@ class Turtlebot(object):
         self.current_depth_msg = None
         self.current_max_depth=None
         self.current_rgb_image = None
+        self.cv_image = None
+        self.last_signal = None
 
         self.current_img_track = []
         self.current_depth_track = []
@@ -102,7 +117,6 @@ class Turtlebot(object):
         self.left_column = None
         self.right_column = None
 
-        self.pickles = []
         self.current_w_corr_win = self.w_corr_win
 
         self.__cmd_vel_pub = rospy.Publisher('/mobile_base/commands/velocity', Twist)
@@ -130,26 +144,54 @@ class Turtlebot(object):
         print "ENTRE A RECOGNIZE"
 
         #cv_image = CvBridge().imgmsg_to_cv2(self.current_rgb_image, self.current_rgb_image.encoding)
-
+        sign_prediction = None
         cv_image = np.asarray(self.current_cv_rgb_image)
-
-        self.pickles.append(cv_image)
-
-        time.sleep(0.5)
-
         fc = FaceDetector()
-
         detections = fc.detect(cv_image)
+        best_detection = None
+        best_confidence = 800
+        for y1,y2,x1,x2 in detections:
+            face = cv_image[y1:y2, x1:x2, :]
+            #cv_image = face
+            face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+            face = cv2.resize(face, (112,92))
+            [p_label, p_confidence] = self.model.predict(face)
+            if best_confidence > p_confidence:
+                best_detection = p_label
+            cv2.rectangle(cv_image, (x1,y1), (x2,y2), (0,255,0), 2)
+            player = fc.to_string(p_label)
+            cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+            
+            
+            #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
+            print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence)
 
-        for d in detections:
-            [p_label, p_confidence] = model.predict(d)
-            print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence) 
+        if best_detection != None:
+                "Playing sound"
+                s = SoundPlayer()
+                s.play_sound(best_detection)
 
-        if len(detections) == 0:
-            print "NO HAY CARA !"
+        signals = self.signal_detector.circle_detect(cv_image)
+        for top, bottom in signals:
+            s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
+            sign_prediction, score = self.signal_detector.knn_predict(s)
+            cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
+            
+            
+
+        self.cv_image = cv_image
+
+        #output = open('pickle'+str(self.iterator)+'.pkl', 'wb')
+        #self.iterator +=1.
+        #pickle.dump(cv_image, output)
+        #output.close()
 
         #respuesta del request
         #return [p_label,p_confidence]
+        if sign_prediction != None:
+            print 'Signal Score: ', score
+            print 'Signal Id: ', sign_prediction
+            self.last_signal = sign_prediction
 
     def move(self, linear=0.0, angular=0.0):
         """Moves the robot at a given linear speed and angular velocity
@@ -565,7 +607,7 @@ class Turtlebot(object):
 
         self.align_wall(0.1)
 
-        if obs_init <= 4:
+        if obs_init <= 1:
             self.correct_short_angle()
 
         self.align_wall(0.1)
@@ -602,7 +644,7 @@ class Turtlebot(object):
         self.align_wall(lin_velocity)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-        if obs_init <= 4:
+        if obs_init <= 1:
             self.correct_short_angle()
 
         self.align_wall(lin_velocity)
@@ -651,7 +693,7 @@ class Turtlebot(object):
         
         angle0 = self.__cumulative_angle
         r = rospy.Rate(1000)
-        max_iter = 1000
+        max_iter = 2000
         i = 0
         while not rospy.is_shutdown():
             self.play_sound(1)
@@ -682,16 +724,19 @@ class Turtlebot(object):
     def apply_action(self,action,observation):
         if action==Action.move:
             if observation>0:
-                self.move_maze_distance(0.8,0.2)
+                self.move_maze_distance(0.8,0.15)
             else:
                 return False
         elif action==Action.turn_left:
-            self.turn_maze_angle(math.pi/2,1.2)
+            self.turn_maze_angle(math.pi/2,0.9)
         elif action==Action.turn_right:
-            self.turn_maze_angle(-math.pi/2,1.2)
+            self.turn_maze_angle(-math.pi/2,0.9)
         elif action==Action.recognize:
             self.recognize()
         else:
             raise Exception("acton invalid")
 
         return True
+
+    def check_found_players(self):
+        return self.found_players[Player.eduardo] * self.found_players[Player.claudio] * self.found_players[Player.alexis] * self.found_players[Player.arturo] > 0

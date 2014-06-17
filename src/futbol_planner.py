@@ -45,8 +45,7 @@ class FutbolPlanner(object):
 		self.player_position[player] = self.actual_position
 
 	def add_sign(self, sign):
-		self.sign_position.setdefault(sign, [])
-		self.sign_position[sign].append(self.actual_position)
+		self.sign_position[self.actual_position] = sign
 
 		print 'Adding sign: ', self.actual_position, ' - ', sign
 
