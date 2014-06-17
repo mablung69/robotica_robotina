@@ -144,9 +144,9 @@ class Turtlebot(object):
             face = cv2.resize(face, (112,92))
             [p_label, p_confidence] = self.model.predict(face)
             
-            cv2.rectangle(cv_image, (y1,x1), (y2,x2), (0,255,0), 2)
+            cv2.rectangle(cv_image, (x1,y1), (x2,y2), (0,255,0), 2)
             player = fc.to_string(p_label)
-            cv2.putText(cv_image,player,(y1,x1), cv2.FONT_HERSHEY_PLAIN, 1,(0,255,0))
+            cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 4,(0,255,0))
             self.cv_image = cv_image
             #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
             print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence) 
