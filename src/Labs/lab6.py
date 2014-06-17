@@ -43,9 +43,9 @@ def show_image(threadName,robot, delay = 0):
 		
 		time.sleep(delay)
 
-def push(mapper,loc,plan):
+def push(mapper,loc,plan,signs):
 	print "Start Push"
-	mapper.graph.push_map(loc,plan)
+	mapper.graph.push_map(loc,plan=plan,signals=signs)
 	print "End Push"
 
 #main
@@ -85,7 +85,7 @@ if __name__=="__main__":
 
 		
 		#mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)	
-		pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[]],callback=None )
+		pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[],futbol_planner.sign_position],callback=None )
 
 		if type(action) == type(1):
 			futbol_planner.apply_action(action)
@@ -105,7 +105,7 @@ if __name__=="__main__":
 			break
 
 		if robot.check_found_players():
-			pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[]],callback=None )
+			pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[],futbol_planner.sign_position],callback=None )
 			break
 
 	robot.play_sound(6)

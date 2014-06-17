@@ -19,7 +19,7 @@ $(function () {
         drawGraph(graph);
     });
     
-    console.log("VERSION: Signals");
+    console.log("VERSION: Signals2");
 
     //Polling mode
     /*console.log("PollingMode");
@@ -208,7 +208,7 @@ $(function () {
 
     function drawImage(image,row,col,ori,cell_size,margin)
     {
-        img_name = 'turn_right.jpg';
+        img_name = '';
         if(image == "tr")
             img_name = 'turn_right.jpg';
         if(image == "tl")
@@ -224,7 +224,7 @@ $(function () {
         var imageObj = new Image();
         imageObj.onload = function() {
             context.translate(imgX+ cell_size / 2, imgY+ cell_size / 2);
-            context.rotate( Math.PI / 2 * ori);
+            context.rotate( - Math.PI / 2 * ori);
             context.drawImage(imageObj, 0-cell_size/2+margin*2, 0-cell_size/2+margin*2,cell_size-4*margin,cell_size-4*margin);
             context.setTransform(1, 0, 0, 1, 0, 0);
         };
