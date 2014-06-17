@@ -181,10 +181,10 @@ class Turtlebot(object):
 
         self.cv_image = cv_image
 
-        output = open('pickle'+str(self.iterator)+'.pkl', 'wb')
-        self.iterator +=1.
-        pickle.dump(cv_image, output)
-        output.close()
+        #output = open('pickle'+str(self.iterator)+'.pkl', 'wb')
+        #self.iterator +=1.
+        #pickle.dump(cv_image, output)
+        #output.close()
 
         #respuesta del request
         #return [p_label,p_confidence]
@@ -607,7 +607,7 @@ class Turtlebot(object):
 
         self.align_wall(0.1)
 
-        if obs_init <= 2:
+        if obs_init <= 1:
             self.correct_short_angle()
 
         self.align_wall(0.1)
@@ -644,7 +644,7 @@ class Turtlebot(object):
         self.align_wall(lin_velocity)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-        if obs_init <= 2:
+        if obs_init <= 1:
             self.correct_short_angle()
 
         self.align_wall(lin_velocity)

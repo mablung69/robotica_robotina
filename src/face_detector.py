@@ -8,11 +8,11 @@ class FaceDetector(object):
 	def detect(self, img):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		faces = self.face_cascade.detectMultiScale(gray,1.5,3)
-		delta = 20
+		delta = 5
 		max_h, max_w = gray.shape
 		detections = []
 		for (x,y,w,h) in faces:
-			y1 = max(0, y-delta)
+			y1 = max(0, y-30)
 			y2 = min(y+delta+h, max_h)
 			x1 = max(0, x-delta)
 			x2 = min(x+delta+w, max_w)

@@ -68,8 +68,8 @@ class SignalDetector(object):
 		gray = img[:,:,1]
 		#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		gray = cv2.medianBlur(gray,9)
-		circles = cv2.HoughCircles(gray,cv2.cv.CV_HOUGH_GRADIENT,1,10,
-                            param1=200,param2=100,minRadius=10,maxRadius=0)
+		circles = cv2.HoughCircles(gray,cv2.cv.CV_HOUGH_GRADIENT,1,100,
+                            param1=50,param2=50,minRadius=20,maxRadius=0)
 		signals = []
 
 		
