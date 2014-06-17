@@ -159,6 +159,7 @@ class Turtlebot(object):
             cv2.rectangle(cv_image, (x1,y1), (x2,y2), (0,255,0), 2)
             player = fc.to_string(p_label)
             cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+            cv_image = face
             
             #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
             print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence)
