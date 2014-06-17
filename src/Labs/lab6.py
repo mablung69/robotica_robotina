@@ -98,4 +98,8 @@ if __name__=="__main__":
 		else:
 			break
 
+		if robot.check_found_players():
+			pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[]],callback=None )
+			break
+
 	robot.play_sound(6)

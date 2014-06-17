@@ -23,6 +23,6 @@ class SoundPlayer(object):
 if __name__=="__main__":
 
     s = SoundPlayer()
-    s.play_sound(Player.eduardo)
+    s.play_sound(Player.claudio)
 
     time.sleep(3)

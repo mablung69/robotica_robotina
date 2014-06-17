@@ -48,11 +48,17 @@ class Turtlebot(object):
 
     def __init__(self):
 
+        self.found_players = {}
+        self.found_players[Players.eduardo] = 0
+        self.found_players[Players.claudio] = 0
+        self.found_players[Players.alexis] = 0
+        self.found_players[Players.arturo] = 0
+
         path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
         self.model=cv2.createEigenFaceRecognizer()
         self.model.load(path)
 
-        selg.signal_detector = SignalDetector()
+        self.signal_detector = SignalDetector()
 
         rospy.init_node('pyturtlebot', anonymous=True)
         rospy.myargv(argv=sys.argv)
@@ -156,13 +162,14 @@ class Turtlebot(object):
             print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence)
 
         if best_detection != None:
+                "Playing sound"
                 s = SoundPlayer()
                 s.play_sound(best_detection)
 
         if len(detections) == 0:
             print "NO HAY CARA !"
 
-        signals = selg.signal_detector.circle_detect(cv_image)
+        signals = self.signal_detector.circle_detect(cv_image)
         for top, bottom in signals:
             cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
 
@@ -714,3 +721,6 @@ class Turtlebot(object):
             raise Exception("acton invalid")
 
         return True
+
+    def check_found_players(self):
+        return found_players[Players.eduardo] * self.found_players[Players.claudio] * self.found_players[Players.alexis] * self.found_players[Players.arturo] > 0
