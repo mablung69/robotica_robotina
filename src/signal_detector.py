@@ -77,7 +77,7 @@ class SignalDetector(object):
 				delta = 5
 				top = (int(i[0]-i[2]-delta),int(i[1]-i[2]-delta))
 				bottom = (int(i[0]+i[2]+delta),int(i[1]+i[2]+delta))
-				signals.append(img[top[1]:bottom[1],top[0]:bottom[0]])
+				signals.append((top, bottom))
 				#print 'Top: ', top
 				#print 'Bottom: ', bottom
 				if test:
