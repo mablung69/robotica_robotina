@@ -29,8 +29,8 @@ def show_image(threadName,robot, delay = 0):
 	while True:
 		k = cv2.waitKey(1)
 
-		if robot.current_cv_rgb_image != None:
-			img = np.asarray(robot.current_cv_rgb_image)
+		if robot.cv_image != None:
+			img = robot.cv_image
 			height, width, depth = img.shape
 			p1 = ( width / 2 - robot.current_w_corr_win / 2 , height / 2 - robot.h_corr_win / 2 )
 			p2 = ( width / 2 + robot.current_w_corr_win / 2 , height / 2 + robot.h_corr_win / 2 )
@@ -58,47 +58,41 @@ if __name__=="__main__":
 
 	f_loader = FileLoader()
 	f_loader.read_map(filename)
-	#f_loader.generate_undirected_graph()
+	f_loader.generate_undirected_graph()
 	f_loader.generate_directed_graph()
-	#f_loader.estimate_distances()
+	f_loader.estimate_distances()
 
-	location = f_loader.starts[0]
-	goals    = f_loader.goals
-	max_col  = f_loader.max_cols
-	max_row  = f_loader.max_rows
+	location 		= f_loader.starts[0]
+	goals    		= f_loader.goals
+	max_col  		= f_loader.max_cols
+	max_row  		= f_loader.max_rows
+	graph    		= f_loader.directed_graph
+	node_distance 	= f_loader.node_distance
 
-	#thread.start_new_thread( show_image, ("Thread-1",robot, ) )
+	thread.start_new_thread( show_image, ("Thread-1",robot, ) )
 	
-	futbol_planner   = FutbolPlanner(max_col,max_row,location,goals)
-	mapper.init_map()
+	futbol_planner   = FutbolPlanner(graph, location, node_distance)
+	futbol_planner.graph.push_map(futbol_planner.actual_position)
 
 	while True:
 		robot.play_sound(6)
-		#observation = max(robot.get_observation(),0)
+		observation = max(robot.get_observation(),0)
 		#mapper.add_observation(observation)
 
-		action = mapper.plan_action()
+		action = futbol_planner.plan_action()
 
 		#mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)	
-		pool.apply_async( push, [mapper,mapper.location,mapper.current_plan],callback=None )
+		pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[]],callback=None )
 
 		if type(action) == type(1):
-			mapper.apply_action(action)
+			futbol_planner.apply_action(action)
 			robot.apply_action(action,observation)
 
 
-			if robot.get_observation() <= 10:
+			if robot.get_observation() <= 0:
 					robot.apply_action(Action.recognize,0)
-				
-				f = open('pickles.p', 'wb')
-				pickle.dump(robot.pickles, f)
-				f.close()
 
 		else:
-			break
-
-		if mapper.location in goals:
-			pool.apply_async( push, [mapper,mapper.location,mapper.current_plan],callback=None )
 			break
 
 	robot.play_sound(6)
