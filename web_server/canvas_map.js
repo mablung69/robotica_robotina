@@ -18,9 +18,11 @@ $(function () {
         console.log(graph);
         drawGraph(graph);
     });
+    
+    console.log("VERSION: Signals");
 
     //Polling mode
-    console.log("PollingMode");
+    /*console.log("PollingMode");
     setInterval(function(){
         $.get( "/test.json", function( data ) {
             graph =  data ;
@@ -34,6 +36,7 @@ $(function () {
             console.log(graph);
             drawGraph(graph);
         });
+    */
 
     function drawGraph(graph)
     {
