@@ -10,22 +10,22 @@ class SignalDetector(object):
 		self.template = {}
 		self.hog_features = {}
 		
-		I = cv2.imread('../Templates/turn_left.jpg')
+		I = cv2.imread('Templates/turn_left.jpg')
 		self.hog_features[Sign.turn_left] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_left] = I
 
-		I = cv2.imread('../Templates/turn_right.jpg')
+		I = cv2.imread('Templates/turn_right.jpg')
 		self.hog_features[Sign.turn_right] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_right] = I
 
-		I = cv2.imread('../Templates/dont_turn_left.jpg')
+		I = cv2.imread('Templates/dont_turn_left.jpg')
 		self.hog_features[Sign.dont_turn_left] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_left] = I
 
-		I = cv2.imread('../Templates/dont_turn_right.jpg')
+		I = cv2.imread('Templates/dont_turn_right.jpg')
 		self.hog_features[Sign.dont_turn_right] = self.compute_hog(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_right] = I

@@ -1,18 +1,15 @@
 import pygame
 import os
+import time
 from enums import Sounds
 from enums import Player
 
 class SoundPlayer(object):
 
     def __init__(self):
-        pygame.init()                              #initialize pygame
         pygame.mixer.init()
 
         self.sounds = {}
-
-        if not os.path.isfile(Sounds.eduardo):
-            print "No file for eduardo"
 
         self.sounds[Player.eduardo] = pygame.mixer.Sound(Sounds.eduardo)
         self.sounds[Player.alexis] = pygame.mixer.Sound(Sounds.alexis)
@@ -26,4 +23,6 @@ class SoundPlayer(object):
 if __name__=="__main__":
 
     s = SoundPlayer()
-    s.play_sound(Player.alexis)
+    s.play_sound(Player.claudio)
+
+    time.sleep(3)

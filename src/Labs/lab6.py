@@ -75,6 +75,9 @@ if __name__=="__main__":
 	futbol_planner.graph.push_map(futbol_planner.actual_position)
 	action = futbol_planner.plan_action()
 
+	if robot.get_observation() <= 0:
+		robot.apply_action(Action.recognize,0)
+
 	while True:
 		robot.play_sound(6)
 		observation = max(robot.get_observation(),0)
@@ -99,6 +102,10 @@ if __name__=="__main__":
 			action = futbol_planner.plan_action()
 
 		else:
+			break
+
+		if robot.check_found_players():
+			pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[]],callback=None )
 			break
 
 	robot.play_sound(6)
