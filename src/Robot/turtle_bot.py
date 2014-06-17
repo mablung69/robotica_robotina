@@ -18,6 +18,7 @@ from sensor_msgs.msg import Image
 from tf import transformations as trans
 from RobotinaImage import RobotinaImage
 from ..enums import Action
+from ..enums import Player
 from ..sound_player import SoundPlayer
 
 import time
@@ -49,10 +50,10 @@ class Turtlebot(object):
     def __init__(self):
 
         self.found_players = {}
-        self.found_players[Players.eduardo] = 0
-        self.found_players[Players.claudio] = 0
-        self.found_players[Players.alexis] = 0
-        self.found_players[Players.arturo] = 0
+        self.found_players[Player.eduardo] = 0
+        self.found_players[Player.claudio] = 0
+        self.found_players[Player.alexis] = 0
+        self.found_players[Player.arturo] = 0
 
         path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
         self.model=cv2.createEigenFaceRecognizer()
@@ -723,4 +724,4 @@ class Turtlebot(object):
         return True
 
     def check_found_players(self):
-        return found_players[Players.eduardo] * self.found_players[Players.claudio] * self.found_players[Players.alexis] * self.found_players[Players.arturo] > 0
+        return self.found_players[Player.eduardo] * self.found_players[Player.claudio] * self.found_players[Player.alexis] * self.found_players[Player.arturo] > 0
