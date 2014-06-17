@@ -22,4 +22,11 @@ class Player(object):
 	claudio = 2
 	arturo	= 3
 
+class Sounds(object):
+	SOUND_PATH="sonidos_chile/"
+	eduardo = SOUND_PATH + "vargas_01.wav"
+	alexis 	= SOUND_PATH + "sanchez_02.wav"
+	claudio = SOUND_PATH + "bravo_03.wav"
+	arturo	= SOUND_PATH + "vidal_01.wav"
+
 	
