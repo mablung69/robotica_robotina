@@ -174,7 +174,7 @@ class Turtlebot(object):
         signals = self.signal_detector.circle_detect(cv_image)
         for top, bottom in signals:
             cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
-            s = cv_image[top[0]:bottom[0], top[1]:bottom[1]]
+            s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
             sign_prediction, score = self.signal_detector.knn_predict(s)
 
         self.cv_image = cv_image
