@@ -22,6 +22,16 @@ class FaceDetector(object):
 
 		return detections
 
+	def to_string(self, player):
+		if player == 0:
+			return 'Eduardo Vargas'
+		if player == 1:
+			return 'Alexis Sanchez'
+		if player == 2:
+			return 'Claudio Bravo'
+		if plyer == 3:
+			return 'Arturo Vidal'
+
 if __name__ == '__main__':
 	import pickle
 	
