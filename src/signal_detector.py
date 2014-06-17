@@ -35,7 +35,7 @@ class SignalDetector(object):
 
 			
 
-	def template_detect(self, img, test=True):
+	def template_detect(self, img, test=False):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		#_, gray = cv2.threshold(gray,127,255,cv2.THRESH_BINARY)
 		score 		= 0
@@ -64,7 +64,7 @@ class SignalDetector(object):
 			cv2.imshow('Signal', temp)
 		return result, score
 
-	def circle_detect(self, img, test=True):
+	def circle_detect(self, img, test=False):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		gray = cv2.medianBlur(gray,9)
 		circles = cv2.HoughCircles(gray,cv2.cv.CV_HOUGH_GRADIENT,1,20,
