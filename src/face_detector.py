@@ -18,7 +18,8 @@ class FaceDetector(object):
 			x2 = min(x+delta+w, max_w)
 			roi_gray = gray[y1:y2, x1:x2]
 			roi_gray = cv2.resize(roi_gray, (112,92))
-			detections.append(roi_gray)
+			#detections.append(roi_gray)
+			detections.append((y1,y2,x1,x2))
 
 		return detections
 
@@ -29,7 +30,7 @@ class FaceDetector(object):
 			return 'Alexis Sanchez'
 		if player == 2:
 			return 'Claudio Bravo'
-		if plyer == 3:
+		if player == 3:
 			return 'Arturo Vidal'
 
 if __name__ == '__main__':

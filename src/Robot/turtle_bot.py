@@ -23,7 +23,6 @@ import time
 
 _turtlebot_singleton = None
 
-import pickle
 from ..face_detector import FaceDetector
 
 
@@ -102,7 +101,6 @@ class Turtlebot(object):
         self.left_column = None
         self.right_column = None
 
-        self.pickles = []
         self.current_w_corr_win = self.w_corr_win
 
         self.__cmd_vel_pub = rospy.Publisher('/mobile_base/commands/velocity', Twist)
@@ -133,7 +131,6 @@ class Turtlebot(object):
 
         cv_image = np.asarray(self.current_cv_rgb_image)
 
-        self.pickles.append(cv_image)
 
         time.sleep(0.5)
 
@@ -141,8 +138,14 @@ class Turtlebot(object):
 
         detections = fc.detect(cv_image)
 
-        for d in detections:
-            [p_label, p_confidence] = model.predict(d)
+        for y1,y2,x1,x2 in detections:
+            face = cv_image[y1:y2, x1:x2]
+            [p_label, p_confidence] = model.predict(face)
+            cv2.rectangle(cv_image, (y1,x1), (y2,x2), (0,255,0), 2)
+            player = fc.to_string(p_label)
+            cv2.putText(cv_image,player,(y1,x1), cv2.FONT_HERSHEY_PLAIN, 1,(0,255,0))
+            self.cv_image = cv_image
+            #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
             print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence) 
 
         if len(detections) == 0:
@@ -651,7 +654,7 @@ class Turtlebot(object):
         
         angle0 = self.__cumulative_angle
         r = rospy.Rate(1000)
-        max_iter = 1000
+        max_iter = 2000
         i = 0
         while not rospy.is_shutdown():
             self.play_sound(1)
@@ -682,13 +685,13 @@ class Turtlebot(object):
     def apply_action(self,action,observation):
         if action==Action.move:
             if observation>0:
-                self.move_maze_distance(0.8,0.2)
+                self.move_maze_distance(0.8,0.15)
             else:
                 return False
         elif action==Action.turn_left:
-            self.turn_maze_angle(math.pi/2,1.2)
+            self.turn_maze_angle(math.pi/2,0.9)
         elif action==Action.turn_right:
-            self.turn_maze_angle(-math.pi/2,1.2)
+            self.turn_maze_angle(-math.pi/2,0.9)
         elif action==Action.recognize:
             self.recognize()
         else:
