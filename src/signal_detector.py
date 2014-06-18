@@ -64,7 +64,7 @@ class SignalDetector(object):
 			cv2.imshow('Signal', temp)
 		return result, score
 
-	def circle_detect(self, img, test=True):
+	def circle_detect(self, img, test=False):
 		gray = img[:,:,1]
 		#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		gray = cv2.medianBlur(gray,9)
@@ -91,10 +91,12 @@ class SignalDetector(object):
 		feature = []
 		gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		gray  = cv2.resize(gray, (170,170))
+		gray  = cv2.medianBlur(gray, 9)
 		h, w = gray.shape
 
 
-		feature = hog(gray, pixels_per_cell=(85,85), cells_per_block=(2, 2))
+		feature = hog(gray, pixels_per_cell=(85,170), cells_per_block=(1, 1))
+		#feature = hog(gray, pixels_per_cell=(5,5), cells_per_block=(17, 17))
 		# feature.extend(hog(gray[0:h/2,0:w/2], pixels_per_cell=(85,85)))
 		# feature.extend(hog(gray[0:h/2,w/2:w], pixels_per_cell=(85,85)))
 		# feature.extend(hog(gray[h/2:h,0:w/2], pixels_per_cell=(85,85)))
@@ -110,9 +112,13 @@ class SignalDetector(object):
 		sign     = None
 		for c, f in self.hog_features.items():
 			dist = LA.norm(features - f)
+			print 'class = ', c
+			print 'score = ', dist 
 			if dist < min_dist:
 				sign = c
 				min_dist = dist
+		print "\nSIGN: ",sign
+		print "SCORE: ",min_dist
 		return sign, min_dist
 		
 

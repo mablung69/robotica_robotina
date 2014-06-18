@@ -10,7 +10,7 @@ class Planner(object):
 	def do_planning(self,file_name,start):
 		[graph,goals,walls]=self.build_graph(file_name)
 		solution=self.solve(graph,start,goals)
-		print '\t Path:  ', solution
+		#print '\t Path:  ', solution
 		return [solution,walls]
 
 	def solve(self,start,goals):

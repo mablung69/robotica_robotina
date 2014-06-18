@@ -62,9 +62,11 @@ class FutbolPlanner(object):
 				to_node = (from_node[0], from_node[1]-1, from_node[2])
 			elif from_node[2] == Orientation.down:
 				to_node = (from_node[0]-1, from_node[1], from_node[2])
-			else:
+			elif from_node[2] == Orientation.right:
 				to_node = (from_node[0], from_node[1]+1, from_node[2])
+			
 			self.graph.disconect(from_node, to_node)
+			self.target = self.bfs_search()
 
 		if sign in [Sign.turn_left, Sign.turn_right]:
 			stop_list = []

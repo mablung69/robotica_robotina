@@ -17,8 +17,7 @@ from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 from tf import transformations as trans
 from RobotinaImage import RobotinaImage
-from ..enums import Action
-from ..enums import Player
+from ..enums import Player, Action, Sign
 from ..sound_player import SoundPlayer
 import pickle
 import time
@@ -108,8 +107,8 @@ class Turtlebot(object):
         self.crop_h = 480
         self.crop_w = 480
 
-        self.h_depth_win = 5
-        self.w_depth_win = 5
+        self.h_depth_win = 50
+        self.w_depth_win = 50
 
         self.h_corr_win = 5
         self.w_corr_win = 30
@@ -141,8 +140,6 @@ class Turtlebot(object):
         self.__rgb_img= rospy.Subscriber('/camera/rgb/image_color',Image,self.__rgb_handler)
 
     def recognize(self):
-        print "ENTRE A RECOGNIZE"
-
         #cv_image = CvBridge().imgmsg_to_cv2(self.current_rgb_image, self.current_rgb_image.encoding)
         sign_prediction = None
         cv_image = np.asarray(self.current_cv_rgb_image)
@@ -161,22 +158,21 @@ class Turtlebot(object):
             cv2.rectangle(cv_image, (x1,y1), (x2,y2), (0,255,0), 2)
             player = fc.to_string(p_label)
             cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+
+            #cv2.imshow('Face', face)
             
             
             #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
-            print "UNA CARA ! LABEL: "+str(p_label)+" CONFIDENCE: "+str(p_confidence)
+            print 'Player: ', Player.to_string(p_label)
+            print 'Score: ', p_confidence
 
-        if best_detection != None:
-                "Playing sound"
-                s = SoundPlayer()
-                s.play_sound(best_detection)
-
-        signals = self.signal_detector.circle_detect(cv_image)
-        for top, bottom in signals:
-            s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
-            sign_prediction, score = self.signal_detector.knn_predict(s)
-            cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
-            
+        if best_detection == None:
+            signals = self.signal_detector.circle_detect(cv_image)
+            for top, bottom in signals:
+                s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
+                sign_prediction, score = self.signal_detector.knn_predict(s)
+                cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
+                
             
 
         self.cv_image = cv_image
@@ -188,10 +184,16 @@ class Turtlebot(object):
 
         #respuesta del request
         #return [p_label,p_confidence]
-        if sign_prediction != None:
+        if best_detection != None:
+                "Playing sound"
+                s = SoundPlayer()
+                s.play_sound(best_detection)
+        elif sign_prediction != None and score<0.3:
+            print 'Signal: ', Sign.to_string(sign_prediction)
             print 'Signal Score: ', score
-            print 'Signal Id: ', sign_prediction
             self.last_signal = sign_prediction
+        else:
+            print 'No detections'
 
     def move(self, linear=0.0, angular=0.0):
         """Moves the robot at a given linear speed and angular velocity
@@ -520,7 +522,7 @@ class Turtlebot(object):
         
         else:
             self.current_state = "searching"
-        print self.current_state
+        #print self.current_state
 
     def move_searh_n_destroy(self, lin_velocity, angle_velocity):
 
@@ -607,7 +609,7 @@ class Turtlebot(object):
 
         self.align_wall(0.1)
 
-        if obs_init <= 1:
+        if obs_init <= 2:
             self.correct_short_angle()
 
         self.align_wall(0.1)
@@ -644,7 +646,7 @@ class Turtlebot(object):
         self.align_wall(lin_velocity)
 
         obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-        if obs_init <= 1:
+        if obs_init <= 2:
             self.correct_short_angle()
 
         self.align_wall(lin_velocity)

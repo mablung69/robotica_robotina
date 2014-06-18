@@ -44,9 +44,7 @@ def show_image(threadName,robot, delay = 0):
 		time.sleep(delay)
 
 def push(mapper,loc,plan,signs):
-	print "Start Push"
 	mapper.graph.push_map(loc,plan=plan,signals=signs)
-	print "End Push"
 
 #main
 if __name__=="__main__":

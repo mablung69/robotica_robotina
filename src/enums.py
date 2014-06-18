@@ -16,11 +16,33 @@ class Sign(object):
 	dont_turn_left 	= 3
 	dont_turn_right = 4
 
+	@staticmethod
+	def to_string(n):
+		if n==Sign.turn_left:
+			return 'Turn Left'
+		if n==Sign.turn_right:
+			return 'Turn right'
+		if n==Sign.dont_turn_left:
+			return 'Dont turn Left'
+		if n == Sign.dont_turn_right:
+			return 'Dont turn right'
+
 class Player(object):
 	eduardo = 0
 	alexis 	= 1
 	claudio = 2
 	arturo	= 3
+
+	@staticmethod
+	def to_string(n):
+		if n == Player.eduardo:
+			return 'Eduardo Vargas'
+		if n == Player.alexis:
+			return 'Alexis Sanchez'
+		if n == Player.claudio:
+			return 'Claudio Bravo'
+		if n == Player.arturo:
+			return 'Arturo Vidal'
 
 class Sounds(object):
 	SOUND_PATH="src/sonidos_chile/"
@@ -30,3 +52,5 @@ class Sounds(object):
 	arturo	= SOUND_PATH + "vidal_01.wav"
 
 	
+if __name__ == '__main__':
+	print Player.to_string(Player.eduardo)

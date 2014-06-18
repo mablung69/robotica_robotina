@@ -1,2 +1,2 @@
-MAP_PATH="Mapas/With_Start/"
-file_name = MAP_PATH+"stgo5x5.map" 
+MAP_PATH="src/Mapas/With_Start/"
+file_name = MAP_PATH+"santiago_map.map" 
