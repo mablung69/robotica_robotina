@@ -1,3 +1,8 @@
 *.pyc
 *.pyo
 *.p
+.DS_Store
+pickles
+futbol_chile_set_cr
+jugadors_imgs
+signals_imgs
