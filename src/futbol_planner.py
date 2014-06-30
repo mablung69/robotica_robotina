@@ -45,6 +45,7 @@ class FutbolPlanner(object):
 		self.player_position[player] = self.actual_position
 
 	def add_sign(self, sign):
+		return # ACORDARSE !!!!!!!! #
 		self.sign_position[self.actual_position] = sign
 
 		print 'Adding sign: ', self.actual_position, ' - ', sign

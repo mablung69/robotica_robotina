@@ -12,16 +12,16 @@ class FaceDetector(object):
 		max_h, max_w = gray.shape
 		detections = []
 		for (x,y,w,h) in faces:
-			centerx = x + w/2
-			centery = y + h/2
-			y1 = centery - 61*2
-			y2 = centery + 61*2
-			x1 = centerx - 46*2
-			x2 = centerx + 46*2
-			#y1 = max(0, y-30)
-			#y2 = min(y+delta+h, max_h)
-			#x1 = max(0, x-delta)
-			#x2 = min(x+delta+w, max_w)
+			# centerx = x + w/2
+			# centery = y + h/2
+			# y1 = centery - 61
+			# y2 = centery + 61
+			# x1 = centerx - 46
+			# x2 = centerx + 46
+			y1 = max(0, y)#-30)
+			y2 = min(y+delta+h, max_h)
+			x1 = max(0, x-delta)
+			x2 = min(x+delta+w, max_w)
 			roi_gray = gray[y1:y2, x1:x2]
 			roi_gray = cv2.resize(roi_gray, (112,92))
 			#detections.append(roi_gray)

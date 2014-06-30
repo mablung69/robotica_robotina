@@ -140,13 +140,19 @@ class Turtlebot(object):
         self.__rgb_img= rospy.Subscriber('/camera/rgb/image_color',Image,self.__rgb_handler)
 
     def recognize(self):
+
+        print 'RECOGNIZE !'
         #cv_image = CvBridge().imgmsg_to_cv2(self.current_rgb_image, self.current_rgb_image.encoding)
         sign_prediction = None
         cv_image = np.asarray(self.current_cv_rgb_image)
+
+        print "imagen"+str(int(self.iterator))+".png"
+        cv2.imwrite("imagen"+str(int(self.iterator))+".png", cv_image )
+        
         fc = FaceDetector()
         detections = fc.detect(cv_image)
         best_detection = None
-        best_confidence = 800
+        best_confidence = 100000
         for y1,y2,x1,x2 in detections:
             face = cv_image[y1:y2, x1:x2, :]
             #cv_image = face
@@ -166,19 +172,19 @@ class Turtlebot(object):
             print 'Player: ', Player.to_string(p_label)
             print 'Score: ', p_confidence
 
-        if best_detection == None:
-            signals = self.signal_detector.circle_detect(cv_image)
-            for top, bottom in signals:
-                s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
-                sign_prediction, score = self.signal_detector.knn_predict(s)
-                cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
+        #if best_detection == None:
+        signals = self.signal_detector.circle_detect(cv_image)
+        for top, bottom in signals:
+            s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
+            sign_prediction, score = self.signal_detector.knn_predict(s)
+            cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
                 
             
 
         self.cv_image = cv_image
 
         #output = open('pickle'+str(self.iterator)+'.pkl', 'wb')
-        #self.iterator +=1.
+        self.iterator +=1.
         #pickle.dump(cv_image, output)
         #output.close()
 
