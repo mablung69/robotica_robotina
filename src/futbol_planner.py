@@ -271,6 +271,9 @@ class FutbolPlanner(object):
 			elif turn == -3:
 				return Action.turn_left
 
+	def check_ending:
+		return False
+
 if __name__=="__main__":
 
 	import multiprocessing
