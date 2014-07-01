@@ -1,68 +1,56 @@
 import cv2
+import sys
 import numpy as np
+
 from enums import Sign
 from skimage.feature import hog
+from skimage.transform import integral_image
 from numpy import linalg as LA
-import sys
+from sklearn.svm import SVC
+from skimage.feature import local_binary_pattern
+
 
 class SignalDetector(object):
 	def __init__(self):
 		self.template = {}
 		self.hog_features = {}
+		self.integral_features = {}
+		self.cls = []
 		
-		I = cv2.imread('Templates/turn_left.jpg')
+		I = cv2.imread('../Templates/turn_left.png')
 		self.hog_features[Sign.turn_left] = self.compute_hog(I)
+		self.integral_features[Sign.turn_left] = self.integral_image(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_left] = I
+		self.cls.append(Sign.turn_left)
 
-		I = cv2.imread('Templates/turn_right.jpg')
+		I = cv2.imread('../Templates/turn_right.png')
 		self.hog_features[Sign.turn_right] = self.compute_hog(I)
+		self.integral_features[Sign.turn_right] = self.integral_image(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_right] = I
+		self.cls.append(Sign.turn_right)
 
-		I = cv2.imread('Templates/dont_turn_left.jpg')
+		I = cv2.imread('../Templates/dont_turn_left.png')
 		self.hog_features[Sign.dont_turn_left] = self.compute_hog(I)
+		self.integral_features[Sign.dont_turn_left] = self.integral_image(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_left] = I
+		self.cls.append(Sign.dont_turn_left)
 
-		I = cv2.imread('Templates/dont_turn_right.jpg')
+		I = cv2.imread('../Templates/dont_turn_right.png')
 		self.hog_features[Sign.dont_turn_right] = self.compute_hog(I)
+		self.integral_features[Sign.dont_turn_right] = self.integral_image(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_right] = I
+		self.cls.append(Sign.dont_turn_right)
 
-		self.method = cv2.TM_CCOEFF
-		self.scales = [1, 1.2]
+		self.cls = np.array(self.cls)
+		self.svm = SVC()
+		self.svm.fit(self.hog_features.values(), self.cls)
+		#self.svm.fit(self.integral_features.values(), self.cls)
 
-			
 
-	def template_detect(self, img, test=False):
-		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-		#_, gray = cv2.threshold(gray,127,255,cv2.THRESH_BINARY)
-		score 		= 0
-		result		= None
-		for scale in self.scales:
-			for signal, template in self.template.items():
-				local_img = gray.copy()
-				local_img = cv2.resize(local_img, (0,0), fx=scale, fy=scale)
-				#print local_img.shape
-				#print template.shape
-				res = cv2.matchTemplate(local_img,template,self.method)
-				min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-				
-				if max_val > score:
-					result = signal
-					score  = max_val
-					h, w = template.shape
-					temp = template
-					i = local_img
-
-		if test:
-			top_left = max_loc
-			bottom_right = (top_left[0] + w, top_left[1] + h)
-			cv2.rectangle(i,top_left, bottom_right, 0, 2)
-			cv2.imshow('Signal Detection', i)
-			cv2.imshow('Signal', temp)
-		return result, score
 
 	def circle_detect(self, img, test=False):
 		gray = img[:,:,1]
@@ -91,58 +79,86 @@ class SignalDetector(object):
 		feature = []
 		gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 		gray  = cv2.resize(gray, (170,170))
-		gray  = cv2.medianBlur(gray, 9)
+		#gray  = cv2.medianBlur(gray, 9)
+		_,gray = cv2.threshold(gray,120,255,cv2.THRESH_BINARY)
 		h, w = gray.shape
+		#feature = hog(gray, pixels_per_cell=(85,170), cells_per_block=(1, 1)) # (85,85)
+		feature = hog(gray, pixels_per_cell=(5,5), cells_per_block=(17, 17))
+		#feature = local_binary_pattern(gray, 8, 3).flatten()
 
-
-		feature = hog(gray, pixels_per_cell=(85,170), cells_per_block=(1, 1))
-		#feature = hog(gray, pixels_per_cell=(5,5), cells_per_block=(17, 17))
-		# feature.extend(hog(gray[0:h/2,0:w/2], pixels_per_cell=(85,85)))
-		# feature.extend(hog(gray[0:h/2,w/2:w], pixels_per_cell=(85,85)))
-		# feature.extend(hog(gray[h/2:h,0:w/2], pixels_per_cell=(85,85)))
-		# feature.extend(hog(gray[h/2:h,w/2:w], pixels_per_cell=(85,85)))
-
-		#feature = np.asarray(feature)
-		#print feature.shape
 		return feature
 
+	def integral_image(self, img):
+		feature = []
+		gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		gray  = cv2.resize(gray, (170,170))
+		#gray  = cv2.medianBlur(gray, 9)
+		_,gray = cv2.threshold(gray,70,255,cv2.THRESH_BINARY_INV)
+		h,w = gray.shape
+		integral = integral_image(gray)
+		cv2.imshow('sign', gray)
+		cv2.waitKey(0)
+
+		# feature.append((float)(integral[84,169]))
+		# feature.append((float)(integral[169,169] - integral[84,169]))
+		feature.append((float)(integral[h-1,w/2]))
+		feature.append((float)(integral[h-1,w-1] - integral[h-1,w/2]))
+
+		feature.append((float)(integral[h/4,w-1]))
+		feature.append((float)(integral[h-1,w-1] - integral[h*3/4, w*3/4]))
+		# feature.append((float)(integral[h/2,w/2]))
+		# feature.append((float)(integral[h/2, w-1] - integral[h/2,w/2]))
+		# feature.append((float)(integral[h-1,w/2]  - integral[h/2,w/2]))
+		# feature.append((float)(integral[h-1,w-1] + integral[h/2,w/2] - integral[h-1,w/2] - integral[h/2,w-1]))
+
+		for i,f in enumerate(feature):
+			feature[i] = (feature[i]/integral[h-1,w-1])
+
+		# feature = np.array(integral, dtype='float').reshape(170*170)
+		# feature = feature/feature[170*170-1]
+		feature = np.array(feature)
+		print feature
+		return feature
+
+
 	def knn_predict(self, img):
-		features = self.compute_hog(img)
+		#features = self.compute_hog(img)
+		features = self.integral_image(img)
 		min_dist = sys.maxint
 		sign     = None
-		for c, f in self.hog_features.items():
+		#for c, f in self.hog_features.items():
+		for c, f in self.integral_features.items():
 			dist = LA.norm(features - f)
 			print 'class = ', c
 			print 'score = ', dist 
 			if dist < min_dist:
 				sign = c
 				min_dist = dist
-		print "\nSIGN: ",sign
-		print "SCORE: ",min_dist
 		return sign, min_dist
+		#return self.svm.predict(features), 0
 		
 
 if __name__ == '__main__':
-	import pickle
-
-	images = pickle.load(open('pickles2_2.p', 'r'))
+	import glob
+	path = '../signals_imgs/*'
 	signal_detector = SignalDetector()
 
-	for img in images:
-		if img.any():
-			signals = signal_detector.circle_detect(img)
-			if len(signals) > 0:
-				for t, b in signals:
-					#cv2.imshow('Signal', s)
-					#print '\nTemplate prediction: ', signal_detector.template_detect(s)
-					i = img[t[1]:b[1], t[0]:b[0]]
-					i2 = img[t[1]:b[1], t[0]:b[0], 1]
-					#i = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
-					cv2.imshow('Signal', i2)
-					k = cv2.waitKey(0)
-					print signal_detector.knn_predict(i)
-				
-				if k==27:
-					break
+	for folder in glob.glob(path):
+		for img_name in glob.glob(str.format('{0}/*.png', folder)):
+			I = cv2.imread(img_name, 1)
+			signals = signal_detector.circle_detect(I)
+			for top, bottom in signals:
+				s = I[top[1]:bottom[1], top[0]:bottom[0]]
+				sign_prediction, score = signal_detector.knn_predict(s)
+				print Sign.to_string(sign_prediction), ' : ', score
+
+			cv2.imshow('Signals', I)
+
+			k = cv2.waitKey(0)
+			if k == 27:
+				break
+		if k == 27:
+			break
+
 			
 		
