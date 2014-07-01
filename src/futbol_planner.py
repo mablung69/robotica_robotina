@@ -1,4 +1,4 @@
-from enums import Orientation, Action, Sign, Player
+from enums import Orientation, Action, Sign, Player, RobotState
 from graph import DirectedGraph
 from astar import shortest_path
 from planner import Planner
@@ -6,8 +6,10 @@ from planner import Planner
 import Queue
 
 class FutbolPlanner(object):
-	def __init__(self, graph, start, node_distance):
+	def __init__(self, graph, start, node_distance, goals, keys, walls):
 		self.player_position = {}
+		self.keys_found = []
+		self.keys_available = 0
 		self.graph 			 = graph
 		self.visited 		 = set()
 		self.sign_position 	 = {}
@@ -15,10 +17,16 @@ class FutbolPlanner(object):
 		self.node_distance 	 = node_distance
 		self.target 		 = None
 		self.path 			 = None
+		self.walls = walls
+
+		self.current_state = RobotState.searching
+		self.current_plan = None
+		self.goals = goals
+		self.keys = keys
 
 		self.visited.add(start)
 		self.target = self.bfs_search()
-
+		self.waiting_for_door = False
 
 	def apply_action(self, action):
 		if action == Action.move:
@@ -36,16 +44,44 @@ class FutbolPlanner(object):
 		elif action == Action.turn_left:
 			#print '>> Localization:applied_action Turning left ', self.actual_position
 			self.actual_position = (self.actual_position[0],self.actual_position[1],(self.actual_position[2]+1)%4)
+		elif action == Action.open_door:
+			pass
 
 		self.visited.add(self.actual_position)
-		if self.actual_position == self.target:
+		self.check_for_key()
+
+		if self.actual_position == self.target and self.current_state == RobotState.searching:
+			self.target = self.bfs_search()
+		if self.actual_position == self.target and self.current_state == RobotState.returning:
+			self.current_state = RobotState.searching
 			self.target = self.bfs_search()
 
+
 	def add_player(self, player):
-		self.player_position[player] = self.actual_position
+
+		if not player in self.player_position:
+
+			print 'Adding player: ', self.actual_position, ' - ', player
+
+			self.player_position[player] = self.actual_position
+			self.current_state = RobotState.returning
+			self.target = self.get_nearest_goal()
+
+
+	def add_key(self):
+		self.keys_found.append( (self.actual_position[0],self.actual_position[1]) )
+		self.keys_available += 1
+
+	def check_for_key(self):
+		n_pos = ( (self.actual_position[0],self.actual_position[1]) )
+		if (n_pos in self.keys) and not (n_pos in self.keys_found):
+			self.add_key()
+
+	def get_keys_available(self):
+
+		return list(set(self.keys) - set(self.keys_found))
 
 	def add_sign(self, sign):
-		return # ACORDARSE !!!!!!!! #
 		self.sign_position[self.actual_position] = sign
 
 		print 'Adding sign: ', self.actual_position, ' - ', sign
@@ -65,7 +101,7 @@ class FutbolPlanner(object):
 				to_node = (from_node[0]-1, from_node[1], from_node[2])
 			elif from_node[2] == Orientation.right:
 				to_node = (from_node[0], from_node[1]+1, from_node[2])
-			
+
 			self.graph.disconect(from_node, to_node)
 			self.target = self.bfs_search()
 
@@ -77,7 +113,7 @@ class FutbolPlanner(object):
 				stop_list.remove((self.actual_position[0],self.actual_position[1],(self.actual_position[2]+1)%4))
 			elif sign == Sign.turn_right:
 				stop_list.remove((self.actual_position[0],self.actual_position[1],(self.actual_position[2]-1)%4))
-			
+
 			target = self.bfs_search(stop_list=stop_list)
 			if target != False:
 				self.target = target
@@ -89,6 +125,14 @@ class FutbolPlanner(object):
 
 	def bfs_search(self, stop_list=[]):
 
+		if(self.current_state == RobotState.searching):
+			return self.do_bfs(stop_list)
+		elif(self.current_state == RobotState.searching):
+			return self.get_nearest_goal()
+		else:
+			return self.get_nearest_goal()
+
+	def do_bfs(self,stop_list):
 		local_visit = set()
 		#print "VISITED: ",self.visited
 		queue = Queue.Queue()
@@ -99,32 +143,108 @@ class FutbolPlanner(object):
 				self.target = node
 				#print "FROM: ",self.actual_position," TO: ",self.target
 				return node
-
 			local_visit.add(node)
-
 			for s in self.graph.edges[node]:
-
 				if not s in stop_list and not s in local_visit:
 					#print "CHECKING: ",s
 					queue.put(s)
-
 		return False
+
+
+	def get_nearest_goal(self):
+		planner = Planner()
+		planner.graph = self.graph
+
+		best_goal = False
+		best_path_dist = 999999
+		for goal in self.goals:
+			g = (goal[0],goal[1],0)
+			path = planner.solve(self.actual_position, [g])
+			if(len(path) < best_path_dist):
+				best_goal = g
+				best_path_dist = len(path)
+
+		return best_goal
+
+	def get_best_plan_with_keys_recursive(self,graph, keys):
+
+		if keys == 0:
+			planner = Planner()
+			planner.graph = graph
+			path = planner.solve(self.actual_position, [self.target])
+			return path, self.keys_available - keys
+
+		best_plan = None
+		best_plan_dist = 999999
+		best_keys_num = 9999999
+		removed_walls = []
+
+		for node, walls in self.walls.items():
+			aux = None
+			for i,w in enumerate(walls):
+
+				if walls[Orientation.up] == 1 and i == Orientation.up:
+					aux = (node[0]+1,node[1], Orientation.up)
+				elif walls[Orientation.left] == 1 and i == Orientation.left:
+					aux = (node[0],node[1]-1, Orientation.left)
+				elif walls[Orientation.down] == 1 and i == Orientation.down:
+					aux = (node[0]-1,node[1], Orientation.down)
+				elif walls[Orientation.right] == 1 and i == Orientation.right:
+					aux = (node[0],node[1]+1, Orientation.right)
+
+				if aux in graph.nodes:
+					graph.add_edge( (node[0],node[1],i),aux)
+
+					path, keys_used = self.get_best_plan_with_keys_recursive(graph,keys - 1)
+
+					graph.disconect( (node[0],node[1],i),aux)
+
+					if(len(path) < best_plan_dist ):
+						best_plan_dist = len(path)
+						best_keys_num = keys_used
+						best_plan = path
+					elif( len(path) == best_plan_dist and keys_used < best_keys_num ):
+						best_plan_dist = len(path)
+						best_keys_num = keys_used
+						best_plan = path
+
+		return best_plan, best_keys_num
 
 	def plan_action(self):
 		planner = Planner()
 		planner.graph = self.graph
+
 		#print "SANTIAGO TARGET: ",self.target
-		path = planner.solve(self.actual_position, [self.target])
+		if self.current_state == RobotState.searching:
+			path = planner.solve(self.actual_position, [self.target])
+		elif self.current_state == RobotState.returning:
+			#path = self.get_best_plan_with_keys()
+			path,keys_used = self.get_best_plan_with_keys_recursive(self.graph, self.keys_available)
+			#path = planner.solve(self.actual_position, [self.target])
 		self.current_plan = path
 
 		if len(path) <= 1:
-			return False
+			return Action.nothing
 		else:
 			next_state = path[1]
 			turn = next_state[2] - self.actual_position[2]
+
+			if( not (next_state in self.graph.edges[self.actual_position]) and
+					( abs(next_state[0] - self.actual_position[0]) +
+						abs(next_state[1] - self.actual_position[1]) == 1 ) and turn == 0):
+
+				if self.waiting_for_door == False:
+					print "Waiting For Door!"
+					self.waiting_for_door = True
+					return Action.open_door
+				else:
+					self.keys_available -= 1
+					print 'USING KEY ! left: ',self.keys_available
+					self.waiting_for_door = False
+
 			if turn == 0:
 				return Action.move
-			elif turn==-1:  
+			elif turn==-1:
 				return Action.turn_right
 			elif turn==1:
 				return Action.turn_left
@@ -144,8 +264,6 @@ if __name__=="__main__":
 	import properties
 	import time
 
-	pool = multiprocessing.Pool(processes=1)
-
 	filename = properties.file_name
 
 	f_loader = FileLoader()
@@ -160,32 +278,49 @@ if __name__=="__main__":
 	max_row  		= f_loader.max_rows
 	graph    		= f_loader.directed_graph
 	node_distance 	= f_loader.node_distance
+	walls = f_loader.walls
+	keys = f_loader.keys
 
 	signals = {}
 	signals[(1,0,1)] = Sign.dont_turn_right
 	signals[(4,1,0)] = Sign.turn_right
 
-	#thread.start_new_thread( show_image, ("Thread-1",robot, ) )
-	
-	futbol_planner   = FutbolPlanner(graph, location, node_distance)
-	futbol_planner.graph.push_map(futbol_planner.actual_position,signals=futbol_planner.sign_position)
+	players = {}
+	players[(1,1,1)] = Player.alexis
+	players[(3,3,0)] = Player.claudio
+
+
+	futbol_planner   = FutbolPlanner(graph, location, node_distance, goals, keys , walls)
+	futbol_planner.graph.push_map(futbol_planner.actual_position,
+																plan=futbol_planner.current_plan,
+																signals=futbol_planner.sign_position,
+																goals=futbol_planner.goals,
+																keys=futbol_planner.get_keys_available(),
+																players=futbol_planner.player_position)
 
 	while True:
-		print 'Iteration: ', futbol_planner.actual_position
+		print 'Iteration: ', futbol_planner.actual_position, ' ', RobotState.to_string(futbol_planner.current_state)
 		action = futbol_planner.plan_action()
 
-		futbol_planner.graph.push_map(futbol_planner.actual_position,signals=futbol_planner.sign_position)
+		futbol_planner.graph.push_map(futbol_planner.actual_position,
+																	plan=futbol_planner.current_plan,
+																	signals=futbol_planner.sign_position,
+																	goals=futbol_planner.goals,
+																	keys=futbol_planner.get_keys_available(),
+																	players=futbol_planner.player_position)
 
 		if type(action) == type(1):
 			futbol_planner.apply_action(action)
 		else:
 			break
 
-		if futbol_planner.actual_position == (0,0,0):
-			pass
-
 		if len(futbol_planner.player_position) > 3:
-			futbol_planner.graph.push_map(futbol_planner.actual_position,signals=futbol_planner.sign_position)
+			futbol_planner.graph.push_map(futbol_planner.actual_position,
+																		plan=futbol_planner.current_plan,
+																		signals=futbol_planner.sign_position,
+																		goals=futbol_planner.goals,
+																		keys=futbol_planner.get_keys_available(),
+																		players=futbol_planner.player_position)
 			break
 
 		if futbol_planner.target == False:
@@ -194,5 +329,7 @@ if __name__=="__main__":
 		if futbol_planner.actual_position in signals.keys():
 			futbol_planner.add_sign(signals[futbol_planner.actual_position])
 
-		time.sleep(1)
+		if futbol_planner.actual_position in players.keys():
+			futbol_planner.add_player(players[futbol_planner.actual_position])
 
+		time.sleep(1)

@@ -40,7 +40,7 @@ def show_image(threadName,robot, delay = 0):
 		if k == 27:
 			cv2.destroyAllWindows()
 			break
-		
+
 		time.sleep(delay)
 
 def push(mapper,loc,plan,signs):
@@ -68,7 +68,7 @@ if __name__=="__main__":
 	node_distance 	= f_loader.node_distance
 
 	thread.start_new_thread( show_image, ("Thread-1",robot, ) )
-	
+
 	futbol_planner   = FutbolPlanner(graph, location, node_distance)
 	futbol_planner.graph.push_map(futbol_planner.actual_position)
 	action = futbol_planner.plan_action()
@@ -81,18 +81,16 @@ if __name__=="__main__":
 		observation = max(robot.get_observation(),0)
 		#mapper.add_observation(observation)
 
-		
-		#mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)	
+		#mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)
 		pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[],futbol_planner.sign_position],callback=None )
 
 		if type(action) == type(1):
 			futbol_planner.apply_action(action)
 			robot.apply_action(action,observation)
 
-
 			if robot.get_observation() <= 0:
 				robot.apply_action(Action.recognize,0)
-			
+
 			if robot.last_signal != None:
 				futbol_planner.add_sign(robot.last_signal)
 				robot.last_signal = None

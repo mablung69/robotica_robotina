@@ -18,8 +18,8 @@ $(function () {
         console.log(graph);
         drawGraph(graph);
     });
-    
-    console.log("VERSION: Signals2");
+
+    console.log("VERSION: Keys3");
 
     //Polling mode
     /*console.log("PollingMode");
@@ -60,23 +60,42 @@ $(function () {
                 node = node.replace(/\)/g,'');
                 node = node.replace(/\ /g,'');
                 node = node.split(",");
-                
+
                 node[0] = graph.size[0] - parseInt(node[0],10) - 1;
                 node[1] = parseInt(node[1],10);
-                
-                drawCell( node[0], node[1], walls, cell_size, margin );
+
+                drawCell( node[0], node[1], walls, cell_size, margin , graph.players);
             }
         }
+
+        drawGoals(graph.goals,cell_size,margin);
+
+        drawKeys(graph.keys,cell_size,margin);
 
         drawPlan(graph.plan,graph.size[0],cell_size,margin);
 
         drawImages(graph.signals,cell_size,margin);
 
         drawRobot(graph.size[0] - graph.location[0] - 1,graph.location[1],graph.location[2],cell_size,margin);
-        
+
     }
 
-    function drawCell(row,col,walls,cell_size,margin )
+    function parseNode(n)
+    {
+        node = n
+        node = node.replace(/\(/g,'');
+        node = node.replace(/\)/g,'');
+        node = node.replace(/\ /g,'');
+        node = node.split(",");
+
+        node[0] = graph.size[0] - parseInt(node[0],10) - 1;
+        node[1] = parseInt(node[1],10);
+        node[2] = parseInt(node[2],10);
+
+        return node
+    }
+
+    function drawCell(row,col,walls,cell_size,margin, players )
     {
         var topLeftX = margin + (cell_size * (col) );
         var topLeftY = margin + (cell_size * (row) );
@@ -90,10 +109,37 @@ $(function () {
         var botLeftX = margin + (cell_size * (col) );
         var botLeftY = margin + (cell_size * (row + 1) );
 
+        paint_walls = [];
+
+        for (var player in players){
+
+            if (players.hasOwnProperty(player)) {
+                var node = parseNode(player);
+
+                if( row == node[0] && col == node[1] )
+                  {
+                    console.log(row+' '+col)
+                    console.log(node)
+                    console.log(walls)
+                    paint_walls.push(node[2]);
+
+                  }
+            }
+        }
+
         //Top wall
         if(walls[0] == 1)
         {
             context.beginPath();
+            context.lineWidth = 2;
+            context.strokeStyle = "rgb(0,0,0)";
+
+            if(paint_walls.indexOf(0) >= 0)
+            {
+                context.lineWidth = 5;
+                context.strokeStyle = "rgb(255, 0, 0)";
+            }
+
             context.moveTo(topLeftX, topLeftY);
             context.lineTo(topRightX, topRightY);
             context.stroke();
@@ -102,6 +148,16 @@ $(function () {
         if(walls[1] == 1)
         {
             context.beginPath();
+            context.lineWidth = 2;
+            context.strokeStyle = "rgb(0,0,0)";
+
+            if(paint_walls.indexOf(1) >= 0)
+            {
+                console.log('Painting')
+                context.lineWidth = 5;
+                context.strokeStyle = "rgb(255, 0, 0)";
+            }
+
             context.moveTo(topLeftX, topLeftY);
             context.lineTo(botLeftX, botLeftY);
             context.stroke();
@@ -110,6 +166,15 @@ $(function () {
         if(walls[2] == 1)
         {
             context.beginPath();
+            context.lineWidth = 2;
+            context.strokeStyle = "rgb(0,0,0)";
+
+            if(paint_walls.indexOf(2) >= 0)
+            {
+                context.lineWidth = 5;
+                context.strokeStyle = "rgb(255, 0, 0)";
+            }
+
             context.moveTo(botLeftX, botLeftY);
             context.lineTo(botRightX, botRightY);
             context.stroke();
@@ -118,6 +183,15 @@ $(function () {
         if(walls[3] == 1)
         {
             context.beginPath();
+            context.lineWidth = 2;
+            context.strokeStyle = "rgb(0,0,0)";
+
+            if(paint_walls.indexOf(3) >= 0)
+            {
+                context.lineWidth = 5;
+                context.strokeStyle = "rgb(255, 0, 0)";
+            }
+
             context.moveTo(topRightX, topRightY);
             context.lineTo(botRightX, botRightY);
             context.stroke();
@@ -133,13 +207,13 @@ $(function () {
         var endAngle = startAngle + Math.PI / 2;
 
         context.beginPath();
-        context.lineWidth = 1;
+        context.lineWidth = 2;
         context.strokeStyle = '#000000';
         context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
         context.stroke();
 
         context.beginPath();
-        context.lineWidth = 1;
+        context.lineWidth = 2;
         context.strokeStyle = '#000000';
         context.arc(centerX, centerY, radius, startAngle, endAngle, false);
         context.closePath();
@@ -171,13 +245,74 @@ $(function () {
                 context.strokeStyle = "rgba(0, 255, 0, 0.2)";
                 context.stroke();
             }
-            
+
             last_step = step;
             last_row = row;
             last_col = col;
             centerLastX = centerNextX;
             centerLastY = centerNextY;
         }
+    }
+
+    function drawGoals(goals,cell_size,margin)
+    {
+        for (var goal in goals){
+
+            if (goals.hasOwnProperty(goal)) {
+                var node = goal;
+
+                node = node.replace(/\(/g,'');
+                node = node.replace(/\)/g,'');
+                node = node.replace(/\ /g,'');
+                node = node.split(",");
+
+                node[0] = graph.size[0] - parseInt(node[0],10) - 1;
+                node[1] = parseInt(node[1],10);
+                node[2] = parseInt(node[2],10);
+
+                drawRect("rgba(255, 0, 0, 0.2)",node[0],node[1],node[2],cell_size,margin);
+
+            }
+        }
+    }
+
+    function drawKeys(goals,cell_size,margin)
+    {
+        for (var goal in goals){
+
+            if (goals.hasOwnProperty(goal)) {
+                var node = goal;
+
+                node = node.replace(/\(/g,'');
+                node = node.replace(/\)/g,'');
+                node = node.replace(/\ /g,'');
+                node = node.split(",");
+
+                node[0] = graph.size[0] - parseInt(node[0],10) - 1;
+                node[1] = parseInt(node[1],10);
+                node[2] = parseInt(node[2],10);
+
+                drawRect("rgba(255, 255, 0, 0.2)",node[0],node[1],node[2],cell_size,margin);
+
+            }
+        }
+    }
+
+    function drawRect(color,row,col,ori,cell_size,margin)
+    {
+        r_color = color;
+
+        var gX = margin + (cell_size * (col) );
+        var gY = margin + (cell_size * (row) );
+
+        context.beginPath();
+        context.rect(gX, gY, cell_size, cell_size);
+        context.fillStyle = r_color;
+        context.fill();
+        context.lineWidth = 0;
+        context.strokeStyle = r_color;
+        context.stroke();
+
     }
 
     function drawImages(signals,cell_size,margin)
@@ -192,18 +327,18 @@ $(function () {
                 node = node.replace(/\)/g,'');
                 node = node.replace(/\ /g,'');
                 node = node.split(",");
-                
+
                 node[0] = graph.size[0] - parseInt(node[0],10) - 1;
                 node[1] = parseInt(node[1],10);
                 node[2] = parseInt(node[2],10);
-                
+
                 drawImage(str_img,node[0],node[1],node[2],cell_size,margin);
 
             }
 
-            
+
         }
-        
+
     }
 
     function drawImage(image,row,col,ori,cell_size,margin)
@@ -230,7 +365,7 @@ $(function () {
         };
         imageObj.src = img_name;
 
-        
+
     }
 
 });

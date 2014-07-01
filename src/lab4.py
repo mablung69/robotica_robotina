@@ -34,7 +34,7 @@ def show_image(threadName,robot, delay = 0):
 		if k == 27:
 			cv2.destroyAllWindows()
 			break
-		
+
 		time.sleep(delay)
 
 #main
@@ -49,7 +49,7 @@ if __name__=="__main__":
 	loc=Localization(filename)
 	observation = do_observation_front(robot)
 	loc.add_observation(observation)
-	
+
 	print '>>Main. Locations: ', loc.locations
 
 	while len(loc.locations) != 1:
@@ -69,7 +69,7 @@ if __name__=="__main__":
 
 	start=loc.locations.pop()
 
-	#obtaining optimal path 
+	#obtaining optimal path
 	planifier=Planner();
 	[path,walls]=planifier.do_planning(filename,start)
 
@@ -81,6 +81,6 @@ if __name__=="__main__":
 		robot.apply_action(action, observation)
 		observation = do_observation_front(robot)
 		last_state = path[i]
-		robot.play_sound(5)	
+		robot.play_sound(5)
 
 	robot.play_sound(6)
