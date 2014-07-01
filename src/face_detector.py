@@ -9,7 +9,7 @@ import pickle
 
 class FaceDetector(object):
 	def __init__(self):
-		self.face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+		self.face_cascade = cv2.CascadeClassifier('src/haarcascade_frontalface_default.xml')
 
 	def detect(self, img):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -32,13 +32,9 @@ class FaceDetector(object):
 
 	def to_string(self, player):
 		if player == 0:
-			return 'Eduardo Vargas'
-		if player == 1:
 			return 'Alexis Sanchez'
-		if player == 2:
+		if player == 1:
 			return 'Claudio Bravo'
-		if player == 3:
-			return 'Arturo Vidal'
 		      
 	def is_contained(self,detect1,detect2):
 		(x1,y1,w1,h1)=detect1
@@ -56,7 +52,7 @@ def saveTraining(clasifiers,reductor):
 		pickle.dump(reductor,output_file,pickle.HIGHEST_PROTOCOL)
 	print ">>SAVED"
 	
-def loadTraining(name_exp):
+def loadTraining():
 	print ">>LOADING TRAINING DATA"
 	with open("jugadores_clfs", 'rb') as input_file:
 		clf = pickle.load(input_file)
@@ -64,15 +60,63 @@ def loadTraining(name_exp):
 		pca = pickle.load(input_file)
 	return [clf,pca]
 
-if __name__ == '__main__':
-	#import pickle
+def Test():
+	[clf,pca]=loadTraining()
+	face_detector = FaceDetector()
+	cv_image=cv2.imread('../jugadors_imgs/1/imagen3.png')
 	
+	detections = face_detector.detect(cv_image)
+	best_detection = None
+	best_confidence = 100000
+	
+	Data=[]
+	for (x,y,w,h) in detections:
+		sub_img=cv_image[y:y+h,x:x+w]
+		sub_img=cv2.cvtColor(sub_img, cv2.COLOR_BGR2GRAY)
+		sub_img=cv2.resize(sub_img,(200,200))
+		sub_img=numpy.resize(sub_img,(1,numpy.prod(sub_img.shape)))
+		Data.append(sub_img)
+
+	mat=numpy.zeros((len(Data),Data[0].shape[1]))
+	for index_data in xrange(0,len(Data)):
+		mat[index_data,:]=Data[index_data]
+
+	mat=pca.transform(mat)
+	array_probs = clf.predict_proba(mat)
+
+	selected=[]        
+	for i in xrange(0,array_probs.shape[0]):
+		ind=numpy.argmin(array_probs[0,:])
+		selected.append([array_probs[i,ind],ind])
+
+	best_proba=1
+	ind_best_proba=-1
+	for i in xrange(0,len(selected)):
+		if(selected[i][0]<best_proba):
+			best_proba=selected[i][0]
+			ind_best_proba=i
+
+	p_label=selected[ind_best_proba][1]
+	p_confidence=selected[i][0]
+
+	x=detections[ind_best_proba][0]
+	y=detections[ind_best_proba][1]
+	w=detections[ind_best_proba][2]
+	h=detections[ind_best_proba][3]
+	cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
+	player = face_detector.to_string(p_label)
+	print "Encontrado: ", player
+	cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+	cv2.imshow('image',cv_image)
+	#cv2.rectangle(cv_image,(x,y),(x,y,x+w,y+h), (0,255,0), 2)
+
+def Train():
 	#images = pickle.load(open('pickles2_2.p', 'r'))
 	face_detector = FaceDetector()
 	
 	Data=[]
 	targets_data=[]
-	path="jugadors_imgs"
+	path="../jugadors_imgs"
 	dirList_DATA=os.listdir(path)
 	for folder in dirList_DATA:
 		folder_DATA=os.listdir(path+"/"+folder)
@@ -106,11 +150,15 @@ if __name__ == '__main__':
 	pca=PCA(n_components=20)
 	transformed_data=pca.fit_transform(mat)
 	
-	clf=SVC()
+	clf=SVC(probability=True)
 	clf.fit(transformed_data,targets_data)
 	
 	saveTraining(clf,pca)
 	
-	prediction=clf.predict(transformed_data)
-	print targets_data
+	prediction=clf.predict_proba(transformed_data)
 	print prediction
+
+if __name__ == '__main__':
+	Test()
+
+

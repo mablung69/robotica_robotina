@@ -19,12 +19,14 @@ from tf import transformations as trans
 from RobotinaImage import RobotinaImage
 from ..enums import Player, Action, Sign
 from ..sound_player import SoundPlayer
+from sklearn.decomposition import PCA
+from sklearn.svm import SVC
 import pickle
 import time
 
 _turtlebot_singleton = None
 
-from ..face_detector import FaceDetector
+from ..face_detector import loadTraining, FaceDetector
 from ..signal_detector import SignalDetector
 
 
@@ -53,6 +55,8 @@ class Turtlebot(object):
         self.found_players[Player.claudio] = 0
         self.found_players[Player.alexis] = 0
         self.found_players[Player.arturo] = 0
+
+        [self.clf,self.pca]=loadTraining()
 
         path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
         self.model=cv2.createEigenFaceRecognizer()
@@ -150,26 +154,48 @@ class Turtlebot(object):
         #print "imagen"+str(int(self.iterator))+".png"
         #cv2.imwrite("imagen"+str(int(self.iterator))+".png", cv_image )
 
-        fc = FaceDetector()
-        detections = fc.detect(cv_image)
-        best_detection = None
-        best_confidence = 100000
-        for y1,y2,x1,x2 in detections:
-            face = cv_image[y1:y2, x1:x2, :]
-            #cv_image = face
-            face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
-            face = cv2.resize(face, (112,92))
-            [p_label, p_confidence] = self.model.predict(face)
-            if best_confidence > p_confidence:
-                best_detection = p_label
-            cv2.rectangle(cv_image, (x1,y1), (x2,y2), (0,255,0), 2)
-            player = fc.to_string(p_label)
-            cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+        face_detector = FaceDetector()
+        detections = face_detector.detect(cv_image)
+        
+        Data=[]
+        for (x,y,w,h) in detections:
+            sub_img=cv_image[y:y+h,x:x+w]
+            sub_img=cv2.cvtColor(sub_img, cv2.COLOR_BGR2GRAY)
+            sub_img=cv2.resize(sub_img,(200,200))
+            sub_img=numpy.resize(sub_img,(1,numpy.prod(sub_img.shape)))
+            Data.append(sub_img)
 
-            #cv2.imshow('Face', face)
-            #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
-            print 'Player: ', Player.to_string(p_label)
-            print 'Score: ', p_confidence
+        mat=numpy.zeros((len(Data),Data[0].shape[1]))
+        for index_data in xrange(0,len(Data)):
+            mat[index_data,:]=Data[index_data]
+
+        mat=self.pca.transform(mat)
+        array_probs = self.clf.predict_proba(mat)
+
+        selected=[]        
+        for i in xrange(0,array_probs.shape[0]):
+            ind=numpy.argmin(array_probs[0,:])
+            selected.append([array_probs[i,ind],ind])
+
+        best_proba=1
+        ind_best_proba=-1
+        for i in xrange(0,len(selected)):
+            if(selected[i][0]<best_proba):
+                best_proba=selected[i][0]
+                ind_best_proba=i
+
+        p_label=selected[ind_best_proba][1]
+        p_confidence=selected[i][0]
+
+        x=detections[ind_best_proba][0]
+        y=detections[ind_best_proba][1]
+        w=detections[ind_best_proba][2]
+        h=detections[ind_best_proba][3]
+        cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
+        player = face_detector.to_string(p_label)
+        cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+        print 'Player:', Player.to_string(p_label)
+        print 'Score: ', p_confidence
 
         #if best_detection == None:
         signals = self.signal_detector.circle_detect(cv_image)
