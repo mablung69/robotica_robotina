@@ -12,6 +12,7 @@ class FutbolPlanner(object):
 		self.keys_found = []
 		self.keys_available = 0
 		self.graph 			 = graph
+		self.original_graph  = graph
 		self.visited 		 = set()
 		self.sign_position 	 = {}
 		self.actual_position = start
@@ -156,7 +157,7 @@ class FutbolPlanner(object):
 
 	def get_nearest_goal(self):
 		planner = Planner()
-		planner.graph = self.graph
+		planner.graph = self.original_graph
 
 		best_goal = False
 		best_path_dist = 999999
@@ -230,15 +231,15 @@ class FutbolPlanner(object):
 
 	def plan_action(self):
 		planner = Planner()
-		planner.graph = self.graph
 
-		#print "SANTIAGO TARGET: ",self.target
 		if self.current_state == RobotState.searching:
+			planner.graph = self.graph
 			path = planner.solve(self.actual_position, [self.target])
+
 		elif self.current_state == RobotState.returning:
-			#path = self.get_best_plan_with_keys()
-			path,keys_used = self.best_plan(self.graph, self.keys_available)
-			#path = planner.solve(self.actual_position, [self.target])
+			planner.graph = self.original_graph
+			path,keys_used = self.best_plan(self.original_graph, self.keys_available)
+
 		self.current_plan = path
 
 		if len(path) <= 1:
@@ -271,7 +272,7 @@ class FutbolPlanner(object):
 			elif turn == -3:
 				return Action.turn_left
 
-	def check_ending:
+	def check_ending(self):
 		return False
 
 if __name__=="__main__":
