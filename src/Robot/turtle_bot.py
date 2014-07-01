@@ -63,6 +63,8 @@ class Turtlebot(object):
         self.model.load(path)
 
         self.signal_detector = SignalDetector()
+        self.node_distance = None
+        self.planner = None
 
         rospy.init_node('pyturtlebot', anonymous=True)
         rospy.myargv(argv=sys.argv)
@@ -191,7 +193,7 @@ class Turtlebot(object):
 
             p_label=selected[ind_best_proba][1]
             p_confidence=selected[i][0]
-            if p_confidence>.7:
+            if p_confidence>0.5:
                 best_detection = p_label
 
             x=detections[ind_best_proba][0]
@@ -205,11 +207,12 @@ class Turtlebot(object):
             print 'Score: ', p_confidence
 
         #if best_detection == None:
-        signals = self.signal_detector.circle_detect(cv_image)
-        for top, bottom in signals:
-            s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
-            sign_prediction, score = self.signal_detector.knn_predict(s)
-            cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
+        if best_detection == None:
+            signals = self.signal_detector.circle_detect(cv_image)
+            for top, bottom in signals:
+                s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
+                sign_prediction, score = self.signal_detector.knn_predict(s)
+                cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
 
         self.cv_image = cv_image
 
@@ -526,7 +529,7 @@ class Turtlebot(object):
         self.current_rgb_image=data
         self.current_cv_rgb_image = self.bridge.imgmsg_to_cv(data,"bgr8")
 
-    def turn_maze_angle(self, angle, velocity=1.0):
+    def turn_maze_angle(self, angle, velocity=1.0, correct=True):
         self.__exit_if_movement_disabled()
         # No bounds checking because we trust people. Not like William.
         r = rospy.Rate(1)
@@ -545,6 +548,11 @@ class Turtlebot(object):
             a_diff = self.__cumulative_angle - angle0
             if (angle > 0 and a_diff >= angle) or (angle < 0 and a_diff <= angle):
                 break
+            print 'Get observation: ', self.get_observation()
+            print 'Final observation: ', self.node_distance[self.planner.actual_position]
+            if self.node_distance[self.planner.actual_position] >= 2 and self.get_observation() == self.node_distance[self.planner.actual_position]:
+                self.turn_angle( 5*math.pi/90 * math.copysign(1,msg.angular.z) )
+                break
 
             self.__cmd_vel_pub.publish(msg)
             r.sleep()
@@ -552,14 +560,10 @@ class Turtlebot(object):
         msg.angular.z = 0.0
         self.__cmd_vel_pub.publish(msg)
 
-        obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-
-        self.align_wall(0.1)
-
-        if obs_init <= 2:
-            self.correct_short_angle()
-
-        self.align_wall(0.1)
+        if correct:
+            self.align_wall(0.1)
+            self.correct_angle()
+            self.align_wall(0.1)
 
     def move_maze_distance(self, distance,lin_velocity):
         print '>> Tuttlebot::Move maze distance(distance, velocity)', distance, ' , ', lin_velocity
@@ -571,30 +575,47 @@ class Turtlebot(object):
             self.say("Waiting for kinect")
             r.sleep()
 
+        #msg = Twist()
+        #msg.linear.x = lin_velocity
+        #msg.angular.z = 0
+
+        # d0 = self.current_max_depth
+        # while not rospy.is_shutdown():
+        #     #print(self.left_column,"   ",self.right_column)
+        #     delta = d0 - self.current_max_depth
+        #     #
+        #     #print msg.angular.z
+        #     if delta >= distance:
+        #         break
+            
+        #     self.__cmd_vel_pub.publish(msg)
+        #     r.sleep()
+
+        # msg.linear.x = 0.0
+        # self.__cmd_vel_pub.publish(msg)
+        
         msg = Twist()
         msg.linear.x = lin_velocity
         msg.angular.z = 0
-
-        d0 = self.current_max_depth
+        x0 = self.__x
+        y0 = self.__y
+        r = rospy.Rate(100)
         while not rospy.is_shutdown():
-            #print(self.left_column,"   ",self.right_column)
-            delta = d0 - self.current_max_depth
-            #
-            #print msg.angular.z
-            if delta >= distance:
+
+            d = ((self.__x - x0)**2 + (self.__y - y0)**2)**0.5
+            if d >= distance:
                 break
+
             self.__cmd_vel_pub.publish(msg)
             r.sleep()
-
         msg.linear.x = 0.0
         self.__cmd_vel_pub.publish(msg)
+
         self.say(0)
 
         self.align_wall(lin_velocity)
 
-        obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-        if obs_init <= 2:
-            self.correct_short_angle()
+        self.correct_angle()
 
         self.align_wall(lin_velocity)
 
@@ -605,7 +626,23 @@ class Turtlebot(object):
 
         obs_init=self.get_observation()
 
-        if obs_init >= 0:
+        if obs_init <= 0 and self.node_distance[self.planner.actual_position] == 0:
+            msg = Twist()
+            msg.linear.x = -lin_velocity
+            threshold = 0.1
+
+            while not rospy.is_shutdown():
+                self.play_sound(0)
+                obs_init=self.get_observation()
+                if abs(self.current_max_depth - (0.5+0.8*obs_init)) < threshold:
+                    break
+                self.__cmd_vel_pub.publish(msg)
+                r.sleep()
+
+            msg.linear.x = 0.0
+            self.__cmd_vel_pub.publish(msg)
+
+        elif obs_init >= 1:
             msg = Twist()
             msg.linear.x = lin_velocity
 
@@ -626,7 +663,14 @@ class Turtlebot(object):
 
             msg.linear.x = 0.0
             self.__cmd_vel_pub.publish(msg)
-            self.say(0)
+
+    def correct_angle(self):
+        if self.get_observation <= 0 and self.node_distance[self.planner.actual_position] == 0:
+            self.correct_short_angle()
+        elif self.node_distance[self.planner.actual_position] < 2:
+            self.correct_short_angle()
+        else:
+            pass#self.correct_long_angle()
 
     def correct_short_angle(self):
 
@@ -653,11 +697,6 @@ class Turtlebot(object):
                 msg.angular.z = np.abs(0.5)
 
             obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-            if obs_init > 1:
-                obs_init = min(1,obs_init)
-                msg.angular.z = - msg.angular.z
-            else:
-                obs_init = 1
             if (abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init )**1) or (i > max_iter):
                 break
 
@@ -668,7 +707,12 @@ class Turtlebot(object):
 
         msg.angular.z = 0.0
         self.__cmd_vel_pub.publish(msg)
-        self.wait(1)
+
+    def correct_long_angle(self):
+        obs_init  = self.current_max_depth
+        obs_final = self.node_distance[self.planner.actual_position]*.8 + .4
+        while abs(obs_init - obs_final) > 0.1:
+            self.turn_angle(5*math.pi/90)
 
     def request_open_door(self):
       print "ABREME PLX"

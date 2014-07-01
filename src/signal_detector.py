@@ -63,7 +63,7 @@ class SignalDetector(object):
 
 		if circles != None:
 			for i in circles[0,:]:
-				delta = 10
+				delta = 0
 				top = (int(i[0]-i[2]-delta),int(i[1]-i[2]-delta))
 				bottom = (int(i[0]+i[2]+delta),int(i[1]+i[2]+delta))
 				signals.append((top, bottom))

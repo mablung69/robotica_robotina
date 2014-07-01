@@ -72,7 +72,9 @@ if __name__=="__main__":
 
   thread.start_new_thread( show_image, ("Thread-1",robot, ) )
 
+  robot.node_distance = node_distance
   futbol_planner = FutbolPlanner(graph, location, node_distance, goals, keys , walls)
+  robot.planner = futbol_planner
   action = futbol_planner.plan_action()
 
   if robot.get_observation() <= 0:
