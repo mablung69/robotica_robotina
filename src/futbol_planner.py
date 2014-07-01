@@ -2,6 +2,7 @@ from enums import Orientation, Action, Sign, Player, RobotState
 from graph import DirectedGraph
 from astar import shortest_path
 from planner import Planner
+import copy
 import sys
 
 import Queue
@@ -12,7 +13,7 @@ class FutbolPlanner(object):
 		self.keys_found = []
 		self.keys_available = 0
 		self.graph 			 = graph
-		self.original_graph  = graph
+		self.original_graph  = copy.deepcopy(graph)
 		self.visited 		 = set()
 		self.sign_position 	 = {}
 		self.actual_position = start
@@ -149,24 +150,26 @@ class FutbolPlanner(object):
 				return node
 			local_visit.add(node)
 			for s in self.graph.edges[node]:
+				#print s, local_visit
+				#print (3,3,0) in self.visited
 				if not s in stop_list and not s in local_visit:
-					#print "CHECKING: ",s
 					queue.put(s)
-		return False
+		return self.actual_position
 
 
 	def get_nearest_goal(self):
-		planner = Planner()
-		planner.graph = self.original_graph
 
 		best_goal = False
 		best_path_dist = 999999
 		for goal in self.goals:
-			g = (goal[0],goal[1],0)
-			path = planner.solve(self.actual_position, [g])
-			if(len(path) < best_path_dist):
-				best_goal = g
-				best_path_dist = len(path)
+			for oddy in xrange(0,4):
+				g = (goal[0],goal[1],oddy)
+				self.target = g
+				path,keys = self.best_plan(self.original_graph,self.keys_available)
+
+				if(len(path) < best_path_dist):
+					best_goal = g
+					best_path_dist = len(path)
 
 		return best_goal
 
@@ -304,11 +307,14 @@ if __name__=="__main__":
 	keys = f_loader.keys
 
 	signals = {}
-	signals[(1,0,1)] = Sign.dont_turn_right
-	signals[(4,1,0)] = Sign.turn_right
+	signals[(1,0,1)] = Sign.turn_left
+	signals[(0,2,2)] = Sign.dont_turn_left
+	signals[(1,3,3)] = Sign.dont_turn_left
+	signals[(2,2,3)] = Sign.turn_right
+	signals[(3,0,0)] = Sign.turn_right
 
 	players = {}
-	players[(1,1,1)] = Player.alexis
+	players[(0,1,2)] = Player.alexis
 	players[(3,3,0)] = Player.claudio
 
 
@@ -322,7 +328,10 @@ if __name__=="__main__":
 
 	while True:
 		print 'Iteration: ', futbol_planner.actual_position, ' ', RobotState.to_string(futbol_planner.current_state)
+		print 'Target', futbol_planner.target
+		print 'Keys', futbol_planner.keys_available
 		action = futbol_planner.plan_action()
+		print 'Action', Action.to_string(action)
 
 		futbol_planner.graph.push_map(futbol_planner.actual_position,
 																	plan=futbol_planner.current_plan,
@@ -346,6 +355,7 @@ if __name__=="__main__":
 			break
 
 		if futbol_planner.target == False:
+			print 'Target False !'
 			break
 
 		if futbol_planner.actual_position in signals.keys():
@@ -354,4 +364,4 @@ if __name__=="__main__":
 		if futbol_planner.actual_position in players.keys():
 			futbol_planner.add_player(players[futbol_planner.actual_position])
 
-		time.sleep(1)
+		time.sleep(0.02)

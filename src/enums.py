@@ -12,6 +12,22 @@ class Action(object):
 	open_door		= 4
 	nothing 		= 5
 
+	@staticmethod
+	def to_string(n):
+		if n==Action.move:
+			return 'move'
+		if n==Action.turn_left:
+			return 'turn_left'
+		if n==Action.turn_right:
+			return 'turn_right'
+		if n==Action.recognize:
+			return 'recognize'
+		if n==Action.open_door:
+			return 'open_door'
+		if n==Action.nothing:
+			return 'nothing'
+
+
 class RobotState(object):
 	searching = 0
 	returning = 1
