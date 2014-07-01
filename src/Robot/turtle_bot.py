@@ -665,6 +665,12 @@ class Turtlebot(object):
 
     def request_open_door(self):
       print "ABREME PLX"
+      init_dist = self.get_observation()
+      current_dist = sys.minint
+      r = rospy.Rate(1000)
+      while current_dist < init_dist:
+        current_dist = self.get_observation()
+        r.sleep()
 
     def apply_action(self,action,observation):
         if action==Action.move:

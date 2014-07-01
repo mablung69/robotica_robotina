@@ -2,6 +2,7 @@ from enums import Orientation, Action, Sign, Player, RobotState
 from graph import DirectedGraph
 from astar import shortest_path
 from planner import Planner
+import sys
 
 import Queue
 
@@ -58,14 +59,14 @@ class FutbolPlanner(object):
 
 
 	def add_player(self, player):
+		if self.current_state == RobotState.searching:
+			if not player in self.player_position:
 
-		if not player in self.player_position:
+				print 'Adding player: ', self.actual_position, ' - ', player
 
-			print 'Adding player: ', self.actual_position, ' - ', player
-
-			self.player_position[player] = self.actual_position
-			self.current_state = RobotState.returning
-			self.target = self.get_nearest_goal()
+				self.player_position[player] = self.actual_position
+				self.current_state = RobotState.returning
+				self.target = self.get_nearest_goal()
 
 
 	def add_key(self):
@@ -82,45 +83,47 @@ class FutbolPlanner(object):
 		return list(set(self.keys) - set(self.keys_found))
 
 	def add_sign(self, sign):
-		self.sign_position[self.actual_position] = sign
+		if self.current_state == RobotState.searching:
 
-		print 'Adding sign: ', self.actual_position, ' - ', sign
+			self.sign_position[self.actual_position] = sign
 
-		if sign in [Sign.dont_turn_left, Sign.dont_turn_right]:
-			from_node = self.actual_position
-			if sign == Sign.dont_turn_left:
-				from_node = (from_node[0], from_node[1], (from_node[2]+1)%4)
-			elif sign == Sign.dont_turn_right:
-				from_node = (from_node[0], from_node[1], (from_node[2]-1)%4)
+			print 'Adding sign: ', self.actual_position, ' - ', sign
 
-			if from_node[2] == Orientation.up:
-				to_node = (from_node[0]+1, from_node[1], from_node[2])
-			elif from_node[2] == Orientation.left:
-				to_node = (from_node[0], from_node[1]-1, from_node[2])
-			elif from_node[2] == Orientation.down:
-				to_node = (from_node[0]-1, from_node[1], from_node[2])
-			elif from_node[2] == Orientation.right:
-				to_node = (from_node[0], from_node[1]+1, from_node[2])
+			if sign in [Sign.dont_turn_left, Sign.dont_turn_right]:
+				from_node = self.actual_position
+				if sign == Sign.dont_turn_left:
+					from_node = (from_node[0], from_node[1], (from_node[2]+1)%4)
+				elif sign == Sign.dont_turn_right:
+					from_node = (from_node[0], from_node[1], (from_node[2]-1)%4)
 
-			self.graph.disconect(from_node, to_node)
-			self.target = self.bfs_search()
+				if from_node[2] == Orientation.up:
+					to_node = (from_node[0]+1, from_node[1], from_node[2])
+				elif from_node[2] == Orientation.left:
+					to_node = (from_node[0], from_node[1]-1, from_node[2])
+				elif from_node[2] == Orientation.down:
+					to_node = (from_node[0]-1, from_node[1], from_node[2])
+				elif from_node[2] == Orientation.right:
+					to_node = (from_node[0], from_node[1]+1, from_node[2])
 
-		if sign in [Sign.turn_left, Sign.turn_right]:
-			stop_list = []
-			for i in xrange(0,4):
-				stop_list.append((self.actual_position[0],self.actual_position[1],(self.actual_position[2]+i)%4))
-			if sign == Sign.turn_left:
-				stop_list.remove((self.actual_position[0],self.actual_position[1],(self.actual_position[2]+1)%4))
-			elif sign == Sign.turn_right:
-				stop_list.remove((self.actual_position[0],self.actual_position[1],(self.actual_position[2]-1)%4))
+				self.graph.disconect(from_node, to_node)
+				self.target = self.bfs_search()
 
-			target = self.bfs_search(stop_list=stop_list)
-			if target != False:
-				self.target = target
-			else:
-				target = self.bfs_search()
+			if sign in [Sign.turn_left, Sign.turn_right]:
+				stop_list = []
+				for i in xrange(0,4):
+					stop_list.append((self.actual_position[0],self.actual_position[1],(self.actual_position[2]+i)%4))
+				if sign == Sign.turn_left:
+					stop_list.remove((self.actual_position[0],self.actual_position[1],(self.actual_position[2]+1)%4))
+				elif sign == Sign.turn_right:
+					stop_list.remove((self.actual_position[0],self.actual_position[1],(self.actual_position[2]-1)%4))
+
+				target = self.bfs_search(stop_list=stop_list)
 				if target != False:
 					self.target = target
+				else:
+					target = self.bfs_search()
+					if target != False:
+						self.target = target
 
 
 	def bfs_search(self, stop_list=[]):
@@ -166,6 +169,21 @@ class FutbolPlanner(object):
 
 		return best_goal
 
+	def best_plan(self, graph, keys):
+		best_path = None
+		best_keys = sys.maxint
+		for k in xrange(0,keys+1):
+			path,keys_used = self.get_best_plan_with_keys_recursive(graph, k)
+			if best_path == None:
+				best_path = path
+			if len(path) < len(best_path):
+				best_path = path
+				best_keys = keys_used
+			if( len(path) == len(best_path) and keys_used < best_keys ):
+				best_path = path
+				best_keys = keys_used
+		return best_path, best_keys
+
 	def get_best_plan_with_keys_recursive(self,graph, keys):
 
 		if keys == 0:
@@ -203,7 +221,7 @@ class FutbolPlanner(object):
 						best_plan_dist = len(path)
 						best_keys_num = keys_used
 						best_plan = path
-					elif( len(path) == best_plan_dist and keys_used < best_keys_num ):
+					if( len(path) == best_plan_dist and keys_used < best_keys_num ):
 						best_plan_dist = len(path)
 						best_keys_num = keys_used
 						best_plan = path
@@ -219,7 +237,7 @@ class FutbolPlanner(object):
 			path = planner.solve(self.actual_position, [self.target])
 		elif self.current_state == RobotState.returning:
 			#path = self.get_best_plan_with_keys()
-			path,keys_used = self.get_best_plan_with_keys_recursive(self.graph, self.keys_available)
+			path,keys_used = self.best_plan(self.graph, self.keys_available)
 			#path = planner.solve(self.actual_position, [self.target])
 		self.current_plan = path
 
@@ -252,6 +270,9 @@ class FutbolPlanner(object):
 				return Action.turn_right
 			elif turn == -3:
 				return Action.turn_left
+
+	def check_ending:
+		return False
 
 if __name__=="__main__":
 
