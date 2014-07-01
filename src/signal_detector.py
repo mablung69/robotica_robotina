@@ -16,29 +16,29 @@ class SignalDetector(object):
 		self.hog_features = {}
 		self.integral_features = {}
 		self.cls = []
-		
-		I = cv2.imread('../Templates/turn_left.png')
+
+		I = cv2.imread('Templates/turn_left.png')
 		self.hog_features[Sign.turn_left] = self.compute_hog(I)
 		self.integral_features[Sign.turn_left] = self.integral_image(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_left] = I
 		self.cls.append(Sign.turn_left)
 
-		I = cv2.imread('../Templates/turn_right.png')
+		I = cv2.imread('Templates/turn_right.png')
 		self.hog_features[Sign.turn_right] = self.compute_hog(I)
 		self.integral_features[Sign.turn_right] = self.integral_image(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.turn_right] = I
 		self.cls.append(Sign.turn_right)
 
-		I = cv2.imread('../Templates/dont_turn_left.png')
+		I = cv2.imread('Templates/dont_turn_left.png')
 		self.hog_features[Sign.dont_turn_left] = self.compute_hog(I)
 		self.integral_features[Sign.dont_turn_left] = self.integral_image(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
 		self.template[Sign.dont_turn_left] = I
 		self.cls.append(Sign.dont_turn_left)
 
-		I = cv2.imread('../Templates/dont_turn_right.png')
+		I = cv2.imread('Templates/dont_turn_right.png')
 		self.hog_features[Sign.dont_turn_right] = self.compute_hog(I)
 		self.integral_features[Sign.dont_turn_right] = self.integral_image(I)
 		I = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
@@ -60,7 +60,7 @@ class SignalDetector(object):
                             param1=50,param2=50,minRadius=20,maxRadius=0)
 		signals = []
 
-		
+
 		if circles != None:
 			for i in circles[0,:]:
 				delta = 10
@@ -72,7 +72,7 @@ class SignalDetector(object):
 				if test:
 					cv2.rectangle(img, top, bottom, (0,255,0), 2)
 					cv2.imshow('detected circles',img)
-		
+
 		return signals
 
 	def compute_hog(self, img):
@@ -130,13 +130,13 @@ class SignalDetector(object):
 		for c, f in self.integral_features.items():
 			dist = LA.norm(features - f)
 			print 'class = ', c
-			print 'score = ', dist 
+			print 'score = ', dist
 			if dist < min_dist:
 				sign = c
 				min_dist = dist
 		return sign, min_dist
 		#return self.svm.predict(features), 0
-		
+
 
 if __name__ == '__main__':
 	import glob
@@ -159,6 +159,3 @@ if __name__ == '__main__':
 				break
 		if k == 27:
 			break
-
-			
-		
