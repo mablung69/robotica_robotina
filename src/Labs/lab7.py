@@ -17,7 +17,7 @@ from ..futbol_planner import FutbolPlanner
 from ..file_loader import FileLoader
 
 #import Enums
-from ..enums import Action
+from ..enums import Action, RobotState
 from .. import properties
 
 #import Methods

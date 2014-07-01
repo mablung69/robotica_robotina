@@ -151,8 +151,10 @@ class Turtlebot(object):
         sign_prediction = None
         cv_image = np.asarray(self.current_cv_rgb_image)
 
-        #print "imagen"+str(int(self.iterator))+".png"
-        #cv2.imwrite("imagen"+str(int(self.iterator))+".png", cv_image )
+        print "imagen"+str(int(self.iterator))+".png"
+        cv2.imwrite("wall_imgs/imagen"+str(int(self.iterator))+".png", cv_image )
+
+        best_detection=None
 
         face_detector = FaceDetector()
         detections = face_detector.detect(cv_image)
@@ -162,40 +164,45 @@ class Turtlebot(object):
             sub_img=cv_image[y:y+h,x:x+w]
             sub_img=cv2.cvtColor(sub_img, cv2.COLOR_BGR2GRAY)
             sub_img=cv2.resize(sub_img,(200,200))
-            sub_img=numpy.resize(sub_img,(1,numpy.prod(sub_img.shape)))
+            sub_img=np.resize(sub_img,(1,np.prod(sub_img.shape)))
             Data.append(sub_img)
 
-        mat=numpy.zeros((len(Data),Data[0].shape[1]))
-        for index_data in xrange(0,len(Data)):
-            mat[index_data,:]=Data[index_data]
+        if len(Data)>0:
+            mat=np.zeros((len(Data),Data[0].shape[1]))
+            for index_data in xrange(0,len(Data)):
+                mat[index_data,:]=Data[index_data]
 
-        mat=self.pca.transform(mat)
-        array_probs = self.clf.predict_proba(mat)
+            mat=self.pca.transform(mat)
+            array_probs = self.clf.predict_proba(mat)
 
-        selected=[]        
-        for i in xrange(0,array_probs.shape[0]):
-            ind=numpy.argmin(array_probs[0,:])
-            selected.append([array_probs[i,ind],ind])
+            print array_probs
 
-        best_proba=1
-        ind_best_proba=-1
-        for i in xrange(0,len(selected)):
-            if(selected[i][0]<best_proba):
-                best_proba=selected[i][0]
-                ind_best_proba=i
+            selected=[]        
+            for i in xrange(0,array_probs.shape[0]):
+                ind=np.argmax(array_probs[i,:])
+                selected.append([array_probs[i,ind],ind])
 
-        p_label=selected[ind_best_proba][1]
-        p_confidence=selected[i][0]
+            best_proba=0
+            ind_best_proba=-1
+            for i in xrange(0,len(selected)):
+                if(selected[i][0]>best_proba):
+                    best_proba=selected[i][0]
+                    ind_best_proba=i
 
-        x=detections[ind_best_proba][0]
-        y=detections[ind_best_proba][1]
-        w=detections[ind_best_proba][2]
-        h=detections[ind_best_proba][3]
-        cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
-        player = face_detector.to_string(p_label)
-        cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
-        print 'Player:', Player.to_string(p_label)
-        print 'Score: ', p_confidence
+            p_label=selected[ind_best_proba][1]
+            p_confidence=selected[i][0]
+            if p_confidence>.7:
+                best_detection = p_label
+
+            x=detections[ind_best_proba][0]
+            y=detections[ind_best_proba][1]
+            w=detections[ind_best_proba][2]
+            h=detections[ind_best_proba][3]
+            cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
+            player = face_detector.to_string(p_label)
+            cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+            print 'Player:', Player.to_string(p_label)
+            print 'Score: ', p_confidence
 
         #if best_detection == None:
         signals = self.signal_detector.circle_detect(cv_image)

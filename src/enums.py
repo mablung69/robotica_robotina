@@ -57,9 +57,9 @@ class Sign(object):
 			return 'Dont turn right'
 
 class Player(object):
-	eduardo = 0
-	alexis 	= 1
-	claudio = 2
+	alexis=0
+	claudio = 1
+	eduardo = 2
 	arturo	= 3
 
 	@staticmethod

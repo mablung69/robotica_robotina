@@ -54,9 +54,9 @@ def saveTraining(clasifiers,reductor):
 	
 def loadTraining():
 	print ">>LOADING TRAINING DATA"
-	with open("jugadores_clfs", 'rb') as input_file:
+	with open("src/jugadores_clfs", 'rb') as input_file:
 		clf = pickle.load(input_file)
-	with open("jugadores_rds", 'rb') as input_file:
+	with open("src/jugadores_rds", 'rb') as input_file:
 		pca = pickle.load(input_file)
 	return [clf,pca]
 
