@@ -4,7 +4,7 @@ import numpy as np
 import math
 import cv2
 from cv2 import cv
-from cv_bridge import CvBridge, CvBridgeError 
+from cv_bridge import CvBridge, CvBridgeError
 import rospy
 import pygame
 from kobuki_msgs.msg import BumperEvent
@@ -44,7 +44,7 @@ class Turtlebot(object):
     deltaD = d1-d2
     speed_const = max_linear / deltaD
     v0 = speed_const * d2
-    
+
 
     def __init__(self):
 
@@ -85,7 +85,7 @@ class Turtlebot(object):
         self.movement_enabled = True
         self.iterator = 0
         self.current_laser_msg = None
-        
+
         self.current_cv_image = None
         self.current_cv_rgb_image = None
         self.current_mask = None
@@ -94,6 +94,7 @@ class Turtlebot(object):
         self.current_rgb_image = None
         self.cv_image = None
         self.last_signal = None
+        self.last_player = None
 
         self.current_img_track = []
         self.current_depth_track = []
@@ -129,14 +130,14 @@ class Turtlebot(object):
             '1': rospy.Publisher('/mobile_base/commands/led1', Led),
             '2': rospy.Publisher('/mobile_base/commands/led2', Led),
         }
-        
+
         #-----KINECT HANDLERS---#
 
         #para simulador
         self.__depth_img = rospy.Subscriber('/camera/depth/image_raw',Image ,self.__depth_handler)
         #for real
         #self.__depth_img = rospy.Subscriber('/camera/depth/image',Image ,self.__depth_handler)
-        
+
         self.__rgb_img= rospy.Subscriber('/camera/rgb/image_color',Image,self.__rgb_handler)
 
     def recognize(self):
@@ -146,9 +147,9 @@ class Turtlebot(object):
         sign_prediction = None
         cv_image = np.asarray(self.current_cv_rgb_image)
 
-        print "imagen"+str(int(self.iterator))+".png"
-        cv2.imwrite("imagen"+str(int(self.iterator))+".png", cv_image )
-        
+        #print "imagen"+str(int(self.iterator))+".png"
+        #cv2.imwrite("imagen"+str(int(self.iterator))+".png", cv_image )
+
         fc = FaceDetector()
         detections = fc.detect(cv_image)
         best_detection = None
@@ -166,8 +167,6 @@ class Turtlebot(object):
             cv2.putText(cv_image,player,(x1,y1), cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
 
             #cv2.imshow('Face', face)
-            
-            
             #cv2.putText(im2,string2,(20,40), cv2.FONT_HERSHEY_PLAIN, 1.0,(0,255,0))
             print 'Player: ', Player.to_string(p_label)
             print 'Score: ', p_confidence
@@ -178,8 +177,6 @@ class Turtlebot(object):
             s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
             sign_prediction, score = self.signal_detector.knn_predict(s)
             cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
-                
-            
 
         self.cv_image = cv_image
 
@@ -194,6 +191,7 @@ class Turtlebot(object):
                 "Playing sound"
                 s = SoundPlayer()
                 s.play_sound(best_detection)
+                self.last_player = best_detection
         elif sign_prediction != None and score<0.3:
             print 'Signal: ', Sign.to_string(sign_prediction)
             print 'Signal Score: ', score
@@ -245,7 +243,7 @@ class Turtlebot(object):
         y0 = self.__y
         r = rospy.Rate(100)
         while not rospy.is_shutdown():
-            
+
             d = ((self.__x - x0)**2 + (self.__y - y0)**2)**0.5
             if d >= distance:
                 break
@@ -421,7 +419,7 @@ class Turtlebot(object):
     def __depth_handler(self, data):
         try:
             self.current_depth_msg = data
-            self.current_cv_image = self.bridge.imgmsg_to_cv(data,"32FC1")            
+            self.current_cv_image = self.bridge.imgmsg_to_cv(data,"32FC1")
 
             obs_init= 0
             if self.current_max_depth != None:
@@ -431,17 +429,17 @@ class Turtlebot(object):
             w = self.w_corr_win
 
             h2 = self.h_corr_win
-            
+
             if obs_init > 1:
-                w2 = 3 * self.w_corr_win 
-            else: 
+                w2 = 3 * self.w_corr_win
+            else:
                 w2 = self.w_corr_win
 
             self.current_w_corr_win = w2
 
             img = np.asarray(self.current_cv_image)
             max_h, max_w = img.shape
-            
+
             img_aux = img[max_h*1/2-h:max_h*1/2+h, max_w/2-w:max_w/2+w]
             img_aux = img_aux[~np.isnan(img_aux)]
             if len(img_aux)>1:
@@ -492,98 +490,8 @@ class Turtlebot(object):
         return obs_init
 
     def __rgb_handler(self,data):
-        
         self.current_rgb_image=data
         self.current_cv_rgb_image = self.bridge.imgmsg_to_cv(data,"bgr8")
-        #self.__track_red()
-
-     
-
-    def __track_red(self):
-
-        img = np.asarray(self.current_cv_rgb_image)
-        x, self.horrible = self.image_procesor.image_analisis(img)
-
-        # img = cv2.blur(img,(5,5))
-        # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-        # lower = np.array([170,160,60])
-        # upper = np.array([180,256,256])
-
-        # mask = cv2.inRange(hsv, lower, upper)
-        # mask = cv2.blur(mask,(5,5))
-        
-        # self.current_mask = mask
-        
-        # M=cv2.moments(mask)
-        
-        if x != None:
-            if self.current_state == "searching":
-                self.current_state = "following"
-
-            centroid_x= x
-            # centroid_y= int(M['m01']/M['m00'])
-            # self.current_target_x = centroid_x
-            # self.current_target_y = centroid_y
-        
-        else:
-            self.current_state = "searching"
-        #print self.current_state
-
-    def move_searh_n_destroy(self, lin_velocity, angle_velocity):
-
-        if self.current_substate == None:
-            self.current_substate = "turning"
-        if self.current_state == None:
-            self.current_state = "following"
-        
-        #print self.current_state
-        #print "MINDIST: ",self.current_min_dist
-
-        #lin_velocity = min(self.max_linear, lin_velocity)
-        if self.current_state == "searching":
-
-            if self.current_substate == "moving":
-                pass#self.move(linear= lin_velocity)
-            elif self.current_substate == "turning":
-                pass#self.move(angular= angle_velocity, linear=0)
-            elif self.current_substate == "backwards":
-                pass#self.move_distance(.1,-lin_velocity)
-                #self.move(angular= angle_velocity)
-
-        elif self.current_state == "following":
-            #print (str(self.current_target_x) + "   "+ str(self.current_target_depth))
-            if self.current_target_x != None and self.current_target_depth != None:
-                                
-                
-                factor_a = float(self.current_target_x) - 320.0                
-                factor_l =  (float(self.current_target_depth) - self.stop_dist ) / 2.0 
-
-                if abs(float(self.current_target_depth) - self.stop_dist) < 0.2 :
-                    lin_velocity = 0 
-                
-                #print "Vel: "+ str(lin_velocity * factor_l)
-                #print "Target: ", float(self.current_target_depth)
-                #print "Stop at: ", float(self.stop_dist)
-
-                #self.move(linear = lin_velocity, angular = angle_velocity * -1 * factor_a / 320.0 )
-
-    def move_maze(self, lin_velocity, angle_velocity):
-        threshold = 0.15
-        if self.current_maze_state != None:
-            angle_velocity = angle_velocity
-            _min = 0.2
-            if self.current_max_depth < 0.5:
-                self.move( angular = angle_velocity * np.sign(self.current_maze_state))
-            else:
-                if self.current_maze_state > threshold:
-                    self.move(linear = lin_velocity , angular = angle_velocity * self.current_maze_state +_min)
-                elif self.current_maze_state < -threshold:
-                    self.move(linear = lin_velocity , angular = angle_velocity * self.current_maze_state -_min)
-                else:
-                    lin_velocity = lin_velocity
-                    self.move(linear = lin_velocity , angular= 0)
-                    #self.move(linear = lin_velocity*self.current_maze_depth + .1 , angular= 0)
 
     def turn_maze_angle(self, angle, velocity=1.0):
         self.__exit_if_movement_disabled()
@@ -622,7 +530,7 @@ class Turtlebot(object):
 
     def move_maze_distance(self, distance,lin_velocity):
         print '>> Tuttlebot::Move maze distance(distance, velocity)', distance, ' , ', lin_velocity
-        
+
         self.__exit_if_movement_disabled()
         r = rospy.Rate(100)
 
@@ -646,7 +554,7 @@ class Turtlebot(object):
             r.sleep()
 
         msg.linear.x = 0.0
-        self.__cmd_vel_pub.publish(msg)    
+        self.__cmd_vel_pub.publish(msg)
         self.say(0)
 
         self.align_wall(lin_velocity)
@@ -682,9 +590,9 @@ class Turtlebot(object):
                     break
                 self.__cmd_vel_pub.publish(msg)
                 r.sleep()
-                
+
             msg.linear.x = 0.0
-            self.__cmd_vel_pub.publish(msg)    
+            self.__cmd_vel_pub.publish(msg)
             self.say(0)
 
     def correct_short_angle(self):
@@ -698,7 +606,7 @@ class Turtlebot(object):
         r = rospy.Rate(1)
 
         msg = Twist()
-        
+
         angle0 = self.__cumulative_angle
         r = rospy.Rate(1000)
         max_iter = 2000
@@ -718,7 +626,7 @@ class Turtlebot(object):
             else:
                 obs_init = 1
             if (abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init )**1) or (i > max_iter):
-                break  
+                break
 
             self.__cmd_vel_pub.publish(msg)
             i+=1
@@ -728,6 +636,9 @@ class Turtlebot(object):
         msg.angular.z = 0.0
         self.__cmd_vel_pub.publish(msg)
         self.wait(1)
+
+    def request_open_door(self):
+      print "ABREME PLX"
 
     def apply_action(self,action,observation):
         if action==Action.move:
@@ -741,6 +652,10 @@ class Turtlebot(object):
             self.turn_maze_angle(-math.pi/2,0.9)
         elif action==Action.recognize:
             self.recognize()
+        elif action == Action.open_door:
+            self.request_open_door()
+        elif action==Action.nothing:
+          pass
         else:
             raise Exception("acton invalid")
 

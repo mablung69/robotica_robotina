@@ -6,10 +6,11 @@ class FileLoader(object):
 		self.walls  = {}
 		self.starts = []
 		self.goals  = []
+		self.keys   = []
 
 		self.max_cols = None
 		self.max_rows = None
-		
+
 		self.undirected_graph = UndirectedGraph()
 		self.directed_graph = DirectedGraph()
 		self.distance_node = {}
@@ -27,7 +28,7 @@ class FileLoader(object):
 		self.max_rows = int(self.max_rows)
 		self.max_cols = int(self.max_cols)
 
-		for i in range(0, self.max_rows*self.max_cols):     
+		for i in range(0, self.max_rows*self.max_cols):
 			data = f.readline().split(' ')
 			print 'data: ', data
 			data = map(int, data)
@@ -47,7 +48,7 @@ class FileLoader(object):
 				orientation = 2
 			else:
 				orientation = 3
-			self.starts.append((int(data[0]),int(data[1]),orientation))	
+			self.starts.append((int(data[0]),int(data[1]),orientation))
 
 		# Reading Goals
 		print '\t> Parsing ', f.readline()
@@ -57,16 +58,18 @@ class FileLoader(object):
 			data = f.readline().split(' ')
 			row = int(data[0])
 			col = int(data[1])
-			if data[2][0] == 'u':
-				orientation = 0
-			elif data[2][0] == 'l':
-				orientation = 1
-			elif data[2][0] == 'd':
-				orientation = 2
-			else:
-				orientation = 3
-			self.goals.append((row,col,orientation))
-		
+			self.goals.append((row,col))
+
+		# Reading Keys
+		print '\t> Parsing ', f.readline()
+		MAX_KEYS = int(f.readline())
+
+		for i in range(0, MAX_KEYS):
+			data = f.readline().split(' ')
+			row = int(data[0])
+			col = int(data[1])
+			self.keys.append((row,col))
+
 		f.close()
 
 	def generate_undirected_graph(self):
@@ -75,10 +78,10 @@ class FileLoader(object):
 		for w in self.walls.keys():
 			row = w[0]
 			col = w[1]
-			
+
 			for o in orientations:
 				self.undirected_graph.add_node((row,col,o))
-			
+
 			self.undirected_graph.add_edge((row,col,Orientation.up),    (row,col,Orientation.left))
 			self.undirected_graph.add_edge((row,col,Orientation.left),  (row,col,Orientation.down))
 			self.undirected_graph.add_edge((row,col,Orientation.down),  (row,col,Orientation.right))
@@ -100,10 +103,10 @@ class FileLoader(object):
 		for w in self.walls.keys():
 			row = w[0]
 			col = w[1]
-			
+
 			for o in orientations:
 				self.directed_graph.add_node((row,col,o))
-			
+
 			self.directed_graph.add_edge((row,col,Orientation.up),    (row,col,Orientation.left))
 			self.directed_graph.add_edge((row,col,Orientation.left),    (row,col,Orientation.up))
 
