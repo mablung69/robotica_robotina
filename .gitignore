@@ -1,3 +1,6 @@
 *.pyc
 *.pyo
 *.p
+
+jugadors_imgs
+signals_imgs
