@@ -43,8 +43,9 @@ def show_image(threadName,robot, delay = 0):
 
     time.sleep(delay)
 
-def push(mapper,loc,plan,signs):
-  mapper.graph.push_map(loc,plan=plan,signals=signs)
+def push(mapper,loc,plan,signs,goals,keys,players):
+
+  mapper.graph.push_map(loc,plan=plan,signals=signs,goals=goals,keys=keys,players=players)
 
 #main
 if __name__=="__main__":
@@ -66,23 +67,30 @@ if __name__=="__main__":
   max_row  		= f_loader.max_rows
   graph    		= f_loader.directed_graph
   node_distance 	= f_loader.node_distance
+  walls = f_loader.walls
+  keys = f_loader.keys
 
   thread.start_new_thread( show_image, ("Thread-1",robot, ) )
 
-  futbol_planner   = FutbolPlanner(graph, location, node_distance)
-  futbol_planner.graph.push_map(futbol_planner.actual_position)
+  futbol_planner = FutbolPlanner(graph, location, node_distance, goals, keys , walls)
   action = futbol_planner.plan_action()
 
   if robot.get_observation() <= 0:
     robot.apply_action(Action.recognize,0)
 
   while True:
+    print 'Iteration: ', futbol_planner.actual_position, ' ', RobotState.to_string(futbol_planner.current_state)
     robot.play_sound(6)
     observation = max(robot.get_observation(),0)
     #mapper.add_observation(observation)
 
-    #mapper.graph.write_map("../web_server/test.json",mapper.location,mapper.current_plan)
-    pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[],futbol_planner.sign_position],callback=None )
+    pool.apply_async( push, [futbol_planner,
+                            futbol_planner.actual_position,
+                            futbol_planner.current_plan,
+                            futbol_planner.sign_position,
+                            futbol_planner.goals,
+                            futbol_planner.keys,
+                            futbol_planner.player_position],callback=None )
 
     if type(action) == type(1):
       futbol_planner.apply_action(action)
@@ -104,8 +112,14 @@ if __name__=="__main__":
     else:
       break
 
-    if robot.check_found_players():
-      pool.apply_async( push, [futbol_planner,futbol_planner.actual_position,[],futbol_planner.sign_position],callback=None )
+    if futbol_planner.check_ending():
+      pool.apply_async( push, [futbol_planner,
+                              futbol_planner.actual_position,
+                              futbol_planner.current_plan,
+                              futbol_planner.sign_position,
+                              futbol_planner.goals,
+                              futbol_planner.keys,
+                              futbol_planner.player_position],callback=None )
       break
 
   robot.play_sound(6)
