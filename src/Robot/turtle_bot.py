@@ -18,7 +18,7 @@ from sensor_msgs.msg import Image
 from tf import transformations as trans
 from RobotinaImage import RobotinaImage
 from ..enums import Player, Action, Sign
-from ..sound_player import SoundPlayer
+from ..sound import Sound
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 import pickle
@@ -63,6 +63,7 @@ class Turtlebot(object):
         self.model.load(path)
 
         self.signal_detector = SignalDetector()
+        self.face_detector = FaceDetector()
         self.node_distance = None
         self.planner = None
 
@@ -158,53 +159,67 @@ class Turtlebot(object):
 
         best_detection=None
 
-        face_detector = FaceDetector()
-        detections = face_detector.detect(cv_image)
+        # face_detector = FaceDetector()
+        # detections = face_detector.detect(cv_image)
+
         
-        Data=[]
+        # Data=[]
+        # for (x,y,w,h) in detections:
+        #     sub_img=cv_image[y:y+h,x:x+w]
+        #     sub_img=cv2.cvtColor(sub_img, cv2.COLOR_BGR2GRAY)
+        #     sub_img=cv2.resize(sub_img,(200,200))
+        #     sub_img=np.resize(sub_img,(1,np.prod(sub_img.shape)))
+        #     Data.append(sub_img)
+
+        # if len(Data)>0:
+        #     # mat=np.zeros((len(Data),Data[0].shape[1]))
+        #     # for index_data in xrange(0,len(Data)):
+        #     #     mat[index_data,:]=Data[index_data]
+        #     mat = np.array(Data)
+
+        #     mat=self.pca.transform(mat)
+        #     array_probs = self.clf.predict_proba(mat)
+
+        #     print array_probs
+
+        #     selected=[]        
+        #     for i in xrange(0,array_probs.shape[0]):
+        #         ind=np.argmax(array_probs[i,:])
+        #         selected.append([array_probs[i,ind],ind])
+
+        #     best_proba=0
+        #     ind_best_proba=-1
+        #     for i in xrange(0,len(selected)):
+        #         if(selected[i][0]>best_proba):
+        #             best_proba=selected[i][0]
+        #             ind_best_proba=i
+
+        #     p_label=selected[ind_best_proba][1]
+        #     p_confidence=selected[i][0]
+        #     if p_confidence>0.5:
+        #         best_detection = p_label
+
+        #     x=detections[ind_best_proba][0]
+        #     y=detections[ind_best_proba][1]
+        #     w=detections[ind_best_proba][2]
+        #     h=detections[ind_best_proba][3]
+        #     cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
+        #     player = face_detector.to_string(p_label)
+        #     cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+        #     print 'Player:', Player.to_string(p_label)
+        #     print 'Score: ', p_confidence
+
+        # face_detector = FaceDetector()
+        detections = face_detector.detect(cv_image)
+        im_copy = cv_image
+
         for (x,y,w,h) in detections:
-            sub_img=cv_image[y:y+h,x:x+w]
-            sub_img=cv2.cvtColor(sub_img, cv2.COLOR_BGR2GRAY)
-            sub_img=cv2.resize(sub_img,(200,200))
-            sub_img=np.resize(sub_img,(1,np.prod(sub_img.shape)))
-            Data.append(sub_img)
-
-        if len(Data)>0:
-            mat=np.zeros((len(Data),Data[0].shape[1]))
-            for index_data in xrange(0,len(Data)):
-                mat[index_data,:]=Data[index_data]
-
-            mat=self.pca.transform(mat)
-            array_probs = self.clf.predict_proba(mat)
-
-            print array_probs
-
-            selected=[]        
-            for i in xrange(0,array_probs.shape[0]):
-                ind=np.argmax(array_probs[i,:])
-                selected.append([array_probs[i,ind],ind])
-
-            best_proba=0
-            ind_best_proba=-1
-            for i in xrange(0,len(selected)):
-                if(selected[i][0]>best_proba):
-                    best_proba=selected[i][0]
-                    ind_best_proba=i
-
-            p_label=selected[ind_best_proba][1]
-            p_confidence=selected[i][0]
-            if p_confidence>0.5:
-                best_detection = p_label
-
-            x=detections[ind_best_proba][0]
-            y=detections[ind_best_proba][1]
-            w=detections[ind_best_proba][2]
-            h=detections[ind_best_proba][3]
-            cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
-            player = face_detector.to_string(p_label)
+            face = cv_image[y:y+h,x:x+w]
+            face_prediction, score = self.face_detector.predict(face)
+            cv2.rectangle(im_copy,(x,y),(x+w,y+h),(255,0,0),2)
+            player = Player.to_string(face_prediction)
             cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
-            print 'Player:', Player.to_string(p_label)
-            print 'Score: ', p_confidence
+            print str.format('{0}: {1}', player, score)
 
         #if best_detection == None:
         if best_detection == None:
@@ -212,7 +227,7 @@ class Turtlebot(object):
             for top, bottom in signals:
                 s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
                 sign_prediction, score = self.signal_detector.knn_predict(s)
-                cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
+                cv2.rectangle(im_copy, top, bottom, (255,0,0), 2)
 
         self.cv_image = cv_image
 
@@ -225,8 +240,8 @@ class Turtlebot(object):
         #return [p_label,p_confidence]
         if best_detection != None:
                 "Playing sound"
-                s = SoundPlayer()
-                s.play_sound(best_detection)
+                s = Sound()
+                s.play_player(best_detection)
                 self.last_player = best_detection
         elif sign_prediction != None and score<0.3:
             print 'Signal: ', Sign.to_string(sign_prediction)
@@ -715,13 +730,16 @@ class Turtlebot(object):
             self.turn_angle(5*math.pi/90)
 
     def request_open_door(self):
-      print "ABREME PLX"
-      init_dist = self.get_observation()
-      current_dist = sys.minint
-      r = rospy.Rate(1000)
-      while current_dist < init_dist:
-        current_dist = self.get_observation()
-        r.sleep()
+        print "ABREME PLX"
+        s = Sound()
+        s.play_action(Action.open_door)
+        init_dist = self.get_observation()
+        current_dist = sys.minint
+        while current_dist < init_dist:
+            current_dist = self.get_observation()
+            self.wait(1)
+        self.wait(3)
+        s.play_action(Action.thanks)
 
     def apply_action(self,action,observation):
         if action==Action.move:
