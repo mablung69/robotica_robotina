@@ -5,6 +5,7 @@ import sys
 import sklearn
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 import pickle
 
 class FaceDetector(object):
@@ -13,7 +14,7 @@ class FaceDetector(object):
 
 	def detect(self, img):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-		faces = self.face_cascade.detectMultiScale(gray,1.2,3)
+		faces = self.face_cascade.detectMultiScale(gray,1.3,3,cv2.cv.CV_HAAR_FIND_BIGGEST_OBJECT)
 		delta = 5
 		max_h, max_w = gray.shape
 		detections = []
@@ -56,58 +57,60 @@ def loadTraining():
 	print ">>LOADING TRAINING DATA"
 	with open("src/jugadores_clfs", 'rb') as input_file:
 		clf = pickle.load(input_file)
+		print "Imported clasifier"
 	with open("src/jugadores_rds", 'rb') as input_file:
 		pca = pickle.load(input_file)
+		print "Imported pca"
 	return [clf,pca]
 
 def Test():
 	[clf,pca]=loadTraining()
-	face_detector = FaceDetector()
-	cv_image=cv2.imread('../jugadors_imgs/1/imagen3.png')
+	# face_detector = FaceDetector()
+	# cv_image=cv2.imread('../jugadors_imgs/1/imagen3.png')
 	
-	detections = face_detector.detect(cv_image)
-	best_detection = None
-	best_confidence = 100000
+	# detections = face_detector.detect(cv_image)
+	# best_detection = None
+	# best_confidence = 100000
 	
-	Data=[]
-	for (x,y,w,h) in detections:
-		sub_img=cv_image[y:y+h,x:x+w]
-		sub_img=cv2.cvtColor(sub_img, cv2.COLOR_BGR2GRAY)
-		sub_img=cv2.resize(sub_img,(200,200))
-		sub_img=numpy.resize(sub_img,(1,numpy.prod(sub_img.shape)))
-		Data.append(sub_img)
+	# Data=[]
+	# for (x,y,w,h) in detections:
+	# 	sub_img=cv_image[y:y+h,x:x+w]
+	# 	sub_img=cv2.cvtColor(sub_img, cv2.COLOR_BGR2GRAY)
+	# 	sub_img=cv2.resize(sub_img,(200,200))
+	# 	sub_img=numpy.resize(sub_img,(1,numpy.prod(sub_img.shape)))
+	# 	Data.append(sub_img)
 
-	mat=numpy.zeros((len(Data),Data[0].shape[1]))
-	for index_data in xrange(0,len(Data)):
-		mat[index_data,:]=Data[index_data]
+	# mat=numpy.zeros((len(Data),Data[0].shape[1]))
+	# for index_data in xrange(0,len(Data)):
+	# 	mat[index_data,:]=Data[index_data]
 
-	mat=pca.transform(mat)
-	array_probs = clf.predict_proba(mat)
+	# mat=pca.transform(mat)
+	# array_probs = clf.predict_proba(mat)
 
-	selected=[]        
-	for i in xrange(0,array_probs.shape[0]):
-		ind=numpy.argmin(array_probs[0,:])
-		selected.append([array_probs[i,ind],ind])
+	# selected=[]        
+	# for i in xrange(0,array_probs.shape[0]):
+	# 	ind=numpy.argmin(array_probs[0,:])
+	# 	selected.append([array_probs[i,ind],ind])
 
-	best_proba=1
-	ind_best_proba=-1
-	for i in xrange(0,len(selected)):
-		if(selected[i][0]<best_proba):
-			best_proba=selected[i][0]
-			ind_best_proba=i
+	# best_proba=1
+	# ind_best_proba=-1
+	# for i in xrange(0,len(selected)):
+	# 	if(selected[i][0]<best_proba):
+	# 		best_proba=selected[i][0]
+	# 		ind_best_proba=i
 
-	p_label=selected[ind_best_proba][1]
-	p_confidence=selected[i][0]
+	# p_label=selected[ind_best_proba][1]
+	# p_confidence=selected[i][0]
 
-	x=detections[ind_best_proba][0]
-	y=detections[ind_best_proba][1]
-	w=detections[ind_best_proba][2]
-	h=detections[ind_best_proba][3]
-	cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
-	player = face_detector.to_string(p_label)
-	print "Encontrado: ", player
-	cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
-	cv2.imshow('image',cv_image)
+	# x=detections[ind_best_proba][0]
+	# y=detections[ind_best_proba][1]
+	# w=detections[ind_best_proba][2]
+	# h=detections[ind_best_proba][3]
+	# cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
+	# player = face_detector.to_string(p_label)
+	# print "Encontrado: ", player
+	# cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+	# cv2.imshow('image',cv_image)
 	#cv2.rectangle(cv_image,(x,y),(x,y,x+w,y+h), (0,255,0), 2)
 
 def Train():

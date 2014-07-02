@@ -81,7 +81,7 @@ if __name__=="__main__":
     robot.apply_action(Action.recognize,0)
 
   while True:
-    print 'Iteration: ', futbol_planner.actual_position, ' ', RobotState.to_string(futbol_planner.current_state)
+    #print 'Iteration: ', futbol_planner.actual_position, ' ', RobotState.to_string(futbol_planner.current_state)
     robot.play_sound(6)
     observation = max(robot.get_observation(),0)
     #mapper.add_observation(observation)

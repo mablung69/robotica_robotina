@@ -21,6 +21,7 @@ from ..enums import Player, Action, Sign
 from ..sound_player import SoundPlayer
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 import pickle
 import time
 
@@ -153,8 +154,8 @@ class Turtlebot(object):
         sign_prediction = None
         cv_image = np.asarray(self.current_cv_rgb_image)
 
-        print "imagen"+str(int(self.iterator))+".png"
-        cv2.imwrite("wall_imgs/imagen"+str(int(self.iterator))+".png", cv_image )
+        #print "imagen"+str(int(self.iterator))+".png"
+        #cv2.imwrite("wall_imgs/imagen"+str(int(self.iterator))+".png", cv_image )
 
         best_detection=None
 
@@ -193,18 +194,24 @@ class Turtlebot(object):
 
             p_label=selected[ind_best_proba][1]
             p_confidence=selected[i][0]
-            if p_confidence>0.5:
-                best_detection = p_label
 
-            x=detections[ind_best_proba][0]
-            y=detections[ind_best_proba][1]
-            w=detections[ind_best_proba][2]
-            h=detections[ind_best_proba][3]
-            cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
-            player = face_detector.to_string(p_label)
-            cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
-            print 'Player:', Player.to_string(p_label)
-            print 'Score: ', p_confidence
+            b1=p_label==1 and p_confidence>.65
+            b2=p_label==0 and p_confidence>.55
+
+            if (b1 or b2) and (not b1 or not b2) :
+                best_detection = p_label
+                x=detections[ind_best_proba][0]
+                y=detections[ind_best_proba][1]
+                w=detections[ind_best_proba][2]
+                h=detections[ind_best_proba][3]
+                cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
+                player = face_detector.to_string(p_label)
+                cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
+                print 'Player:', Player.to_string(p_label)
+                print 'Score: ', p_confidence
+
+        else:
+            print "No player found"
 
         #if best_detection == None:
         if best_detection == None:
@@ -551,7 +558,7 @@ class Turtlebot(object):
             print 'Get observation: ', self.get_observation()
             print 'Final observation: ', self.node_distance[self.planner.actual_position]
             if self.node_distance[self.planner.actual_position] >= 2 and self.get_observation() == self.node_distance[self.planner.actual_position]:
-                self.turn_angle( 5*math.pi/90 * math.copysign(1,msg.angular.z) )
+                self.turn_angle( 5*math.pi/90 * math.copysign(1,msg.angular.z))
                 break
 
             self.__cmd_vel_pub.publish(msg)
@@ -690,7 +697,7 @@ class Turtlebot(object):
         i = 0
         while not rospy.is_shutdown():
             self.play_sound(1)
-            #print i," : ", abs(self.current_laser_depth[0] - self.current_laser_depth[2])
+            print i," : ", abs(self.current_laser_depth[0] - self.current_laser_depth[2])
             if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
                 msg.angular.z = -np.abs(0.5)
             else: # Turn left
