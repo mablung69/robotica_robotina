@@ -18,7 +18,7 @@ from sensor_msgs.msg import Image
 from tf import transformations as trans
 from RobotinaImage import RobotinaImage
 from ..enums import Player, Action, Sign
-from ..sound_player import SoundPlayer
+from ..soundx import Soundx
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
@@ -52,11 +52,8 @@ class Turtlebot(object):
     def __init__(self):
 
         self.found_players = {}
-        self.found_players[Player.eduardo] = 0
         self.found_players[Player.claudio] = 0
         self.found_players[Player.alexis] = 0
-        self.found_players[Player.arturo] = 0
-
         [self.clf,self.pca]=loadTraining()
 
         path="/home/turtlebot/IIC_3684/robotina/sandbox/robotica_robotina/clasifier.yml"
@@ -64,6 +61,7 @@ class Turtlebot(object):
         self.model.load(path)
 
         self.signal_detector = SignalDetector()
+        self.face_detector = FaceDetector()
         self.node_distance = None
         self.planner = None
 
@@ -159,10 +157,11 @@ class Turtlebot(object):
 
         best_detection=None
 
-        face_detector = FaceDetector()
-        detections = face_detector.detect(cv_image)
-        
-        Data=[]
+        Data = []
+
+        detections = self.face_detector.detect(cv_image)
+        im_copy = cv_image
+
         for (x,y,w,h) in detections:
             sub_img=cv_image[y:y+h,x:x+w]
             sub_img=cv2.cvtColor(sub_img, cv2.COLOR_BGR2GRAY)
@@ -205,7 +204,7 @@ class Turtlebot(object):
                 w=detections[ind_best_proba][2]
                 h=detections[ind_best_proba][3]
                 cv2.rectangle(cv_image,(x,y),(x+w,y+h),(255,0,0),2)
-                player = face_detector.to_string(p_label)
+                player = self.face_detector.to_string(p_label)
                 cv2.putText(cv_image,player,(x,y),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255))
                 print 'Player:', Player.to_string(p_label)
                 print 'Score: ', p_confidence
@@ -219,7 +218,7 @@ class Turtlebot(object):
             for top, bottom in signals:
                 s = cv_image[top[1]:bottom[1], top[0]:bottom[0]]
                 sign_prediction, score = self.signal_detector.knn_predict(s)
-                cv2.rectangle(cv_image, top, bottom, (255,0,0), 2)
+                cv2.rectangle(im_copy, top, bottom, (255,0,0), 2)
 
         self.cv_image = cv_image
 
@@ -232,8 +231,8 @@ class Turtlebot(object):
         #return [p_label,p_confidence]
         if best_detection != None:
                 "Playing sound"
-                s = SoundPlayer()
-                s.play_sound(best_detection)
+                s = Soundx()
+                s.play_player(best_detection)
                 self.last_player = best_detection
         elif sign_prediction != None and score<0.3:
             print 'Signal: ', Sign.to_string(sign_prediction)
@@ -555,8 +554,8 @@ class Turtlebot(object):
             a_diff = self.__cumulative_angle - angle0
             if (angle > 0 and a_diff >= angle) or (angle < 0 and a_diff <= angle):
                 break
-            print 'Get observation: ', self.get_observation()
-            print 'Final observation: ', self.node_distance[self.planner.actual_position]
+            #print 'Get observation: ', self.get_observation()
+            #print 'Final observation: ', self.node_distance[self.planner.actual_position]
             if self.node_distance[self.planner.actual_position] >= 2 and self.get_observation() == self.node_distance[self.planner.actual_position]:
                 self.turn_angle( 5*math.pi/90 * math.copysign(1,msg.angular.z))
                 break
@@ -635,13 +634,19 @@ class Turtlebot(object):
 
         if obs_init <= 0 and self.node_distance[self.planner.actual_position] == 0:
             msg = Twist()
-            msg.linear.x = -lin_velocity
+            
+            if self.current_max_depth > (0.5):
+                msg.linear.x = lin_velocity
+            else:
+                msg.linear.x = -lin_velocity
+
             threshold = 0.1
 
             while not rospy.is_shutdown():
-                self.play_sound(0)
+                #self.play_sound(0)
+                print 'Distance to wall: ',self.current_max_depth - 0.5
                 obs_init=self.get_observation()
-                if abs(self.current_max_depth - (0.5+0.8*obs_init)) < threshold:
+                if abs(self.current_max_depth - (0.5)) < threshold:
                     break
                 self.__cmd_vel_pub.publish(msg)
                 r.sleep()
@@ -672,7 +677,8 @@ class Turtlebot(object):
             self.__cmd_vel_pub.publish(msg)
 
     def correct_angle(self):
-        if self.get_observation <= 0 and self.node_distance[self.planner.actual_position] == 0:
+
+        if self.get_observation() <= 0 and self.node_distance[self.planner.actual_position] == 0:
             self.correct_short_angle()
         elif self.node_distance[self.planner.actual_position] < 2:
             self.correct_short_angle()
@@ -681,8 +687,11 @@ class Turtlebot(object):
 
     def correct_short_angle(self):
 
+        print 'Correcting short angle'
+
         for i in xrange(0,3):
             if self.current_laser_depth[i] == -1:
+                print 'Obs : ',-1
                 return 0
 
         self.__exit_if_movement_disabled()
@@ -696,15 +705,17 @@ class Turtlebot(object):
         max_iter = 2000
         i = 0
         while not rospy.is_shutdown():
-            self.play_sound(1)
+            # self.play_sound(1)
             print i," : ", abs(self.current_laser_depth[0] - self.current_laser_depth[2])
             if self.current_laser_depth[0] - self.current_laser_depth[2] > 0: # Turn right
-                msg.angular.z = -np.abs(0.5)
+                msg.angular.z = -np.abs(0.6)
             else: # Turn left
-                msg.angular.z = np.abs(0.5)
+                msg.angular.z = np.abs(0.6)
+
+            print 'Angle: ',abs(self.current_laser_depth[0] - self.current_laser_depth[2]), ' < ', 0.008
 
             obs_init=max(int(round((self.current_max_depth-0.5)/0.8,0)),0)
-            if (abs(self.current_laser_depth[0] - self.current_laser_depth[2]) < 0.005 * (obs_init )**1) or (i > max_iter):
+            if (abs(self.current_laser_depth[0] - self.current_laser_depth[2])) < 0.008 or (i > max_iter):
                 break
 
             self.__cmd_vel_pub.publish(msg)
@@ -722,13 +733,16 @@ class Turtlebot(object):
             self.turn_angle(5*math.pi/90)
 
     def request_open_door(self):
-      print "ABREME PLX"
-      init_dist = self.get_observation()
-      current_dist = sys.minint
-      r = rospy.Rate(1000)
-      while current_dist < init_dist:
-        current_dist = self.get_observation()
-        r.sleep()
+        print "ABREME PLX"
+        s = Soundx()
+        s.play_action(Action.open_door)
+        init_dist = self.get_observation()
+        current_dist = -1
+        while current_dist < init_dist:
+            current_dist = self.get_observation()
+            self.wait(1)
+        self.wait(3)
+        s.play_action(Action.thanks)
 
     def apply_action(self,action,observation):
         if action==Action.move:
@@ -737,9 +751,9 @@ class Turtlebot(object):
             else:
                 return False
         elif action==Action.turn_left:
-            self.turn_maze_angle(math.pi/2,0.9)
+            self.turn_maze_angle(math.pi/2,0.7)
         elif action==Action.turn_right:
-            self.turn_maze_angle(-math.pi/2,0.9)
+            self.turn_maze_angle(-math.pi/2,0.7)
         elif action==Action.recognize:
             self.recognize()
         elif action == Action.open_door:
@@ -750,6 +764,3 @@ class Turtlebot(object):
             raise Exception("acton invalid")
 
         return True
-
-    def check_found_players(self):
-        return self.found_players[Player.eduardo] * self.found_players[Player.claudio] * self.found_players[Player.alexis] * self.found_players[Player.arturo] > 0

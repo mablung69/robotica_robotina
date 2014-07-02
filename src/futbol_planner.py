@@ -2,8 +2,10 @@ from enums import Orientation, Action, Sign, Player, RobotState
 from graph import DirectedGraph
 from astar import shortest_path
 from planner import Planner
+from soundx import Soundx as Sound
 import copy
 import sys
+import time
 
 import Queue
 
@@ -73,7 +75,11 @@ class FutbolPlanner(object):
 
 	def add_key(self):
 		self.keys_found.append( (self.actual_position[0],self.actual_position[1]) )
+		s = Sound()
+		s.play_action(Action.keys)
 		self.keys_available += 1
+		time.sleep(0.5)
+		s.play_action(Action.thanks)
 
 	def check_for_key(self):
 		n_pos = ( (self.actual_position[0],self.actual_position[1]) )

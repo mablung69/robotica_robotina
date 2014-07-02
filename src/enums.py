@@ -9,8 +9,10 @@ class Action(object):
 	turn_left  	= 1
 	turn_right 	= 2
 	recognize 	= 3
-	open_door		= 4
-	nothing 		= 5
+	open_door	= 4
+	nothing 	= 5
+	thanks		= 6
+	keys 		= 7
 
 	@staticmethod
 	def to_string(n):
@@ -57,28 +59,34 @@ class Sign(object):
 			return 'Dont turn right'
 
 class Player(object):
-	alexis=0
+	alexis  = 0
 	claudio = 1
-	eduardo = 2
-	arturo	= 3
+	#eduardo = 2
+	#arturo	= 3
 
 	@staticmethod
 	def to_string(n):
-		if n == Player.eduardo:
-			return 'Eduardo Vargas'
+		# if n == Player.eduardo:
+		# 	return 'Eduardo Vargas'
 		if n == Player.alexis:
 			return 'Alexis Sanchez'
 		if n == Player.claudio:
 			return 'Claudio Bravo'
-		if n == Player.arturo:
-			return 'Arturo Vidal'
+		# if n == Player.arturo:
+		# 	return 'Arturo Vidal'
 
-class Sounds(object):
+class PlayerSounds(object):
 	SOUND_PATH="src/sonidos_chile/"
 	eduardo = SOUND_PATH + "vargas_01.wav"
 	alexis 	= SOUND_PATH + "sanchez_02.wav"
 	claudio = SOUND_PATH + "bravo_04.wav"
 	arturo	= SOUND_PATH + "vidal_01.wav"
+
+class ActionSounds(object):
+	path 		= 'src/exam_sounds/'
+	key  		= path + 'key.mp3'
+	open_door 	= path + 'door.mp3'
+	thanks 		= path + 'thanks.mp3'
 
 
 if __name__ == '__main__':

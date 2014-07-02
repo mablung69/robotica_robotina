@@ -91,7 +91,6 @@ class SignalDetector(object):
 	def integral_image(self, img):
 		feature = []
 		gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-		cv2.imwrite('sign.png', gray)
 		gray  = cv2.resize(gray, (170,170))
 		#gray  = cv2.medianBlur(gray, 9)
 		_,gray = cv2.threshold(gray,70,255,cv2.THRESH_BINARY_INV)
@@ -140,22 +139,21 @@ class SignalDetector(object):
 
 if __name__ == '__main__':
 	import glob
-	path = '../signals_imgs/*'
+	path = '../wall_imgs/*.png'
 	signal_detector = SignalDetector()
 
-	for folder in glob.glob(path):
-		for img_name in glob.glob(str.format('{0}/*.png', folder)):
-			I = cv2.imread(img_name, 1)
-			signals = signal_detector.circle_detect(I)
-			for top, bottom in signals:
-				s = I[top[1]:bottom[1], top[0]:bottom[0]]
-				sign_prediction, score = signal_detector.knn_predict(s)
-				print Sign.to_string(sign_prediction), ' : ', score
+	for img_name in glob.glob(path):
+		print img_name
+		I = cv2.imread(img_name, 1)
+		signals = signal_detector.circle_detect(I)
+		for top, bottom in signals:
+			s = I[top[1]:bottom[1], top[0]:bottom[0]]
+			cv2.imshow('S', s)
+			sign_prediction, score = signal_detector.knn_predict(s)
+			print Sign.to_string(sign_prediction), ' : ', score
 
-			cv2.imshow('Signals', I)
+		cv2.imshow('Signals', I)
 
-			k = cv2.waitKey(0)
-			if k == 27:
-				break
+		k = cv2.waitKey(0)
 		if k == 27:
 			break
