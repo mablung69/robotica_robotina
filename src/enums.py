@@ -83,10 +83,11 @@ class PlayerSounds(object):
 	arturo	= SOUND_PATH + "vidal_01.wav"
 
 class ActionSounds(object):
-	path 		= 'src/exam_sounds/'
-	key  		= path + 'key.mp3'
-	open_door 	= path + 'door.mp3'
-	thanks 		= path + 'thanks.mp3'
+
+	SOUND_PATH="src/sonidos_chile/"
+	key  		= SOUND_PATH + 'key.wav'
+	open_door 	= SOUND_PATH + 'door.wav'
+	thanks 		= SOUND_PATH + 'thanks.wav'
 
 
 if __name__ == '__main__':

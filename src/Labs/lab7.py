@@ -91,12 +91,13 @@ if __name__=="__main__":
                             futbol_planner.current_plan,
                             futbol_planner.sign_position,
                             futbol_planner.goals,
-                            futbol_planner.keys,
+                            futbol_planner.get_keys_available(),
                             futbol_planner.player_position],callback=None )
 
     if type(action) == type(1):
       futbol_planner.apply_action(action)
       robot.apply_action(action,observation)
+      futbol_planner.play_sounds()
 
       if robot.get_observation() <= 0:
         robot.apply_action(Action.recognize,0)
@@ -120,7 +121,7 @@ if __name__=="__main__":
                               futbol_planner.current_plan,
                               futbol_planner.sign_position,
                               futbol_planner.goals,
-                              futbol_planner.keys,
+                              futbol_planner.get_keys_available(),
                               futbol_planner.player_position],callback=None )
       break
 

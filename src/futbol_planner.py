@@ -23,11 +23,14 @@ class FutbolPlanner(object):
 		self.target 		 = None
 		self.path 			 = None
 		self.walls = walls
+		self.optimize = True
 
 		self.current_state = RobotState.searching
 		self.current_plan = None
 		self.goals = goals
 		self.keys = keys
+
+		self.has_key_sound = False
 
 		self.visited.add(start)
 		self.target = self.bfs_search()
@@ -72,19 +75,24 @@ class FutbolPlanner(object):
 				self.current_state = RobotState.returning
 				self.target = self.get_nearest_goal()
 
+				if self.optimize:
+					for i in xrange(0,4):
+						self.visited.add( (self.actual_position[0],self.actual_position[1],i ))
+
 
 	def add_key(self):
 		self.keys_found.append( (self.actual_position[0],self.actual_position[1]) )
-		s = Sound()
-		s.play_action(Action.keys)
 		self.keys_available += 1
+		self.has_key_sound = True
 		time.sleep(0.5)
-		s.play_action(Action.thanks)
 
 	def check_for_key(self):
+
 		n_pos = ( (self.actual_position[0],self.actual_position[1]) )
 		if (n_pos in self.keys) and not (n_pos in self.keys_found):
 			self.add_key()
+			print 'KEY FOUND ! ',self.keys_available
+			
 
 	def get_keys_available(self):
 
@@ -133,6 +141,10 @@ class FutbolPlanner(object):
 					if target != False:
 						self.target = target
 
+			if self.optimize:
+				for i in xrange(0,4):
+					self.visited.add( (self.actual_position[0],self.actual_position[1],i ))
+
 
 	def bfs_search(self, stop_list=[]):
 
@@ -162,6 +174,12 @@ class FutbolPlanner(object):
 					queue.put(s)
 		return self.actual_position
 
+	def play_sounds(self):
+		if self.has_key_sound:
+			s = Sound()
+			s.play_action(Action.keys)
+			self.has_key_sound = False
+	
 
 	def get_nearest_goal(self):
 
@@ -169,6 +187,7 @@ class FutbolPlanner(object):
 		best_path_dist = 999999
 		for goal in self.goals:
 			for oddy in xrange(0,4):
+				print 'Searching for path to goal ', goal
 				g = (goal[0],goal[1],oddy)
 				self.target = g
 				path,keys = self.best_plan(self.original_graph,self.keys_available)
@@ -176,12 +195,15 @@ class FutbolPlanner(object):
 				if(len(path) < best_path_dist):
 					best_goal = g
 					best_path_dist = len(path)
-
+		print 'Found goal ', best_goal
 		return best_goal
 
 	def best_plan(self, graph, keys):
 		best_path = None
 		best_keys = sys.maxint
+		if keys > 1:
+			keys = 1
+
 		for k in xrange(0,keys+1):
 			path,keys_used = self.get_best_plan_with_keys_recursive(graph, k)
 			if best_path == None:

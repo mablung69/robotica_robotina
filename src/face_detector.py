@@ -28,7 +28,7 @@ class FaceDetector(object):
 
 	def detect(self, img):
 		gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-		faces = self.face_cascade.detectMultiScale(gray,1.3,3,cv2.cv.CV_HAAR_FIND_BIGGEST_OBJECT)
+		faces = self.face_cascade.detectMultiScale(gray,1.1,2)#,cv2.cv.CV_HAAR_FIND_BIGGEST_OBJECT)
 		delta = 5
 		max_h, max_w = gray.shape
 		detections = []

@@ -194,8 +194,8 @@ class Turtlebot(object):
             p_label=selected[ind_best_proba][1]
             p_confidence=selected[i][0]
 
-            b1=p_label==1 and p_confidence>.65
-            b2=p_label==0 and p_confidence>.55
+            b1=p_label==1 and p_confidence>.7
+            b2=p_label==0 and p_confidence>.50
 
             if (b1 or b2) and (not b1 or not b2) :
                 best_detection = p_label
@@ -552,13 +552,13 @@ class Turtlebot(object):
         r = rospy.Rate(100)
         while not rospy.is_shutdown():
             a_diff = self.__cumulative_angle - angle0
-            if (angle > 0 and a_diff >= angle) or (angle < 0 and a_diff <= angle):
+            if (angle > 0 and a_diff >= angle - 0.1 ) or (angle < 0 and a_diff <= angle + 0.1):
                 break
             #print 'Get observation: ', self.get_observation()
             #print 'Final observation: ', self.node_distance[self.planner.actual_position]
             if self.node_distance[self.planner.actual_position] >= 2 and self.get_observation() == self.node_distance[self.planner.actual_position]:
-                self.turn_angle( 5*math.pi/90 * math.copysign(1,msg.angular.z))
-                break
+                #self.turn_angle( 5*math.pi/90 * math.copysign(1,msg.angular.z))
+                pass#break
 
             self.__cmd_vel_pub.publish(msg)
             r.sleep()
@@ -567,9 +567,10 @@ class Turtlebot(object):
         self.__cmd_vel_pub.publish(msg)
 
         if correct:
-            self.align_wall(0.1)
+            #self.align_wall(0.1)
             self.correct_angle()
             self.align_wall(0.1)
+            self.correct_angle()
 
     def move_maze_distance(self, distance,lin_velocity):
         print '>> Tuttlebot::Move maze distance(distance, velocity)', distance, ' , ', lin_velocity
@@ -635,7 +636,7 @@ class Turtlebot(object):
         if obs_init <= 0 and self.node_distance[self.planner.actual_position] == 0:
             msg = Twist()
             
-            if self.current_max_depth > (0.5):
+            if self.current_max_depth > (0.4):
                 msg.linear.x = lin_velocity
             else:
                 msg.linear.x = -lin_velocity
@@ -644,9 +645,9 @@ class Turtlebot(object):
 
             while not rospy.is_shutdown():
                 #self.play_sound(0)
-                print 'Distance to wall: ',self.current_max_depth - 0.5
+                print 'Distance to wall: ',self.current_max_depth - 0.4
                 obs_init=self.get_observation()
-                if abs(self.current_max_depth - (0.5)) < threshold:
+                if abs(self.current_max_depth - (0.4)) < threshold:
                     break
                 self.__cmd_vel_pub.publish(msg)
                 r.sleep()
@@ -658,7 +659,7 @@ class Turtlebot(object):
             msg = Twist()
             msg.linear.x = lin_velocity
 
-            if self.current_max_depth > (0.5+0.8*obs_init):
+            if self.current_max_depth > (0.4+0.8*obs_init):
                 msg.linear.x = lin_velocity
             else:
                 msg.linear.x = -lin_velocity
@@ -668,7 +669,7 @@ class Turtlebot(object):
             while not rospy.is_shutdown():
                 self.play_sound(0)
                 obs_init=self.get_observation()
-                if abs(self.current_max_depth - (0.5+0.8*obs_init)) < threshold:
+                if abs(self.current_max_depth - (0.4+0.8*obs_init)) < threshold:
                     break
                 self.__cmd_vel_pub.publish(msg)
                 r.sleep()
@@ -737,11 +738,14 @@ class Turtlebot(object):
         s = Soundx()
         s.play_action(Action.open_door)
         init_dist = self.get_observation()
-        current_dist = -1
-        while current_dist < init_dist:
+        current_dist = -10
+        r = rospy.Rate(1000)
+        
+        while current_dist <= init_dist:
+            print 'ABRAME LA PUERTA PORFAVOR'
             current_dist = self.get_observation()
-            self.wait(1)
-        self.wait(3)
+            r.sleep()
+
         s.play_action(Action.thanks)
 
     def apply_action(self,action,observation):

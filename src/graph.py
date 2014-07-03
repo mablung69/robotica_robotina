@@ -46,7 +46,6 @@ class DirectedGraph(object):
             p = pusher.Pusher(app_id='76093', key='60ac382824573be1ddd2', secret='d43a1c915d852c869dc0')
             p['robotina'].trigger('map',{'map': json.dumps(data)})
         except Exception as e:
-            print 'x'
             print e
 
     def get_map(self,location,plan,signals,goals,keys,players):
@@ -116,12 +115,8 @@ class DirectedGraph(object):
         for pl in players:
             if pl == Player.alexis:
                 players_map[str(players[pl])] = "alexis"
-            elif pl == Player.eduardo:
-                players_map[str(players[pl])] = "eduardo"
             elif pl == Player.claudio:
                 players_map[str(players[pl])] = "claudio"
-            elif pl == Player.arturo:
-                players_map[str(players[pl])] = "arturo"
 
         return { "size": [max_rows, max_cols], "map": map_nodes, "location": location, "plan": plan, "signals": signal_map, "goals" : goals_map, "keys" : keys_map, "players" : players_map }
 

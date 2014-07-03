@@ -64,8 +64,9 @@ class SignalDetector(object):
 		if circles != None:
 			for i in circles[0,:]:
 				delta = 0
-				top = (int(i[0]-i[2]-delta),int(i[1]-i[2]-delta))
-				bottom = (int(i[0]+i[2]+delta),int(i[1]+i[2]+delta))
+				h,w = gray.shape
+				top = (max(int(i[0]-i[2]-delta),0),max(int(i[1]-i[2]-delta),0))
+				bottom = (min(int(i[0]+i[2]+delta),w),min(int(i[1]+i[2]+delta),h))
 				signals.append((top, bottom))
 				#print 'Top: ', top
 				#print 'Bottom: ', bottom
